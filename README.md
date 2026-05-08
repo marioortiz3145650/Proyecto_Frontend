@@ -1,59 +1,43 @@
-# LayingHensFrontend
+# Laying Hens - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.7.
+Este proyecto es el frontend Angular para el sistema de gestión de gallinas ponedoras.
 
-## Development server
+## Estructura
 
-To start a local development server, run:
+- `src/app/` - Aplicación principal Angular (standalone)
+- `src/app/components/` - Componentes de UI
+- `src/app/services/` - Servicios Angular (HTTP)
+- `src/environments/` - Configuración por entorno
 
-```bash
-ng serve
-```
+## Servicios Configurados
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- `UsersService` - Consume API de usuarios desde el backend NestJS
+- Endpoint base: `/api/users` (proxy a `http://localhost:3000/users`)
 
-## Code scaffolding
+## Backend
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+El backend NestJS debe estar corriendo en `http://localhost:3000` con CORS habilitado para `http://localhost:4200`.
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Scripts
 
 ```bash
-ng generate --help
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo (con proxy configurado)
+npm start
+
+# Build de producción
+npm run build
 ```
 
-## Building
+## Conexión Backend-Frontend
 
-To build the project run:
+El proxy configuration (`proxy.conf.json`) redirige las peticiones a `/api/*` hacia el backend en `http://localhost:3000`.
 
-```bash
-ng build
-```
+El servicio `UsersService` usa `environment.apiUrl` para construir la URL base.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Componentes
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- `Dashboard` - Página principal
+- `Usuarios` - CRUD de usuarios con activar/desactivar
