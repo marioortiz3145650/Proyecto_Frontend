@@ -1,1 +1,131 @@
-<div class="galpones-container"><h2>Galpones</h2></div>
+@if (galpones.length > 0) {
+<div class="galpones-container">
+  <h2>Galpones</h2>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroNombre">Nombre</label>
+        <input
+          type="text"
+          id="filtroNombre"
+          [(ngModel)]="filtros.nombre"
+          placeholder="Buscar por nombre"
+          (keyup.enter)="aplicarFiltros()"
+        />
+      </div>
+      <div class="filter-field">
+        <label for="filtroDireccion">Dirección</label>
+        <input
+          type="text"
+          id="filtroDireccion"
+          [(ngModel)]="filtros.direccion"
+          placeholder="Buscar por dirección"
+          (keyup.enter)="aplicarFiltros()"
+        />
+      </div>
+      <div class="filter-field">
+        <label for="filtroLote">Lote ID</label>
+        <input
+          type="number"
+          id="filtroLote"
+          [(ngModel)]="filtros.lote"
+          placeholder="ID del lote"
+          (keyup.enter)="aplicarFiltros()"
+        />
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="aplicarFiltros()">
+          Buscar
+        </button>
+        <button class="btn btn-secondary" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="ordenarPor('nombre')" style="cursor: pointer">
+            Nombre
+            @if (sortBy === 'nombre') {
+              {{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}
+            }
+          </th>
+          <th (click)="ordenarPor('direccion')" style="cursor: pointer">
+            Dirección
+            @if (sortBy === 'direccion') {
+              {{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}
+            }
+          </th>
+          <th>Lote</th>
+          <th>Fecha Creación</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (galpon of galpones; track galpon.id_galpon) {
+        <tr>
+          <td>{{ galpon.nombre }}</td>
+          <td>{{ galpon.direccion }}</td>
+          <td>{{ galpon.lote?.id_lote || 'N/A' }}</td>
+          <td>{{ galpon.fecha_creacion | date : 'dd/MM/yyyy' }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }}
+      registros
+    </div>
+    <div class="pagination-controls">
+      <button
+        class="btn btn-sm"
+        [disabled]="!meta.hasPrev"
+        (click)="cambiarPagina(meta.page - 1)"
+      >
+        Anterior
+      </button>
+      @for (page of pages; track page) {
+      <button
+        class="btn btn-sm"
+        [class.active]="page === meta.page"
+        (click)="cambiarPagina(page)"
+      >
+        {{ page }}
+      </button>
+      }
+      <button
+        class="btn btn-sm"
+        [disabled]="!meta.hasNext"
+        (click)="cambiarPagina(meta.page + 1)"
+      >
+        Siguiente
+      </button>
+    </div>
+    <div class="items-per-page">
+      <label for="itemsPerPage">Items por página:</label>
+      <select id="itemsPerPage" [(ngModel)]="limit" (change)="cambiarLimite()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+  </div>
+</div>
+} @else {
+<div class="no-data">
+  <p>No hay galpones registrados.</p>
+</div>
+}
