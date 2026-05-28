@@ -164,16 +164,26 @@
 
           <div class="form-field">
             <label for="formTipo">Tipo de Alimento</label>
-            <select id="formTipo" name="tipo_alimento_id" [(ngModel)]="alimentoForm.tipo_alimento_id" required>
-              <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
-            </select>
+            <div class="input-with-button">
+              <select id="formTipo" name="tipo_alimento_id" [(ngModel)]="alimentoForm.tipo_alimento_id" required>
+                <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
+              </select>
+              <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalTipo()">
+                <i class="pi pi-plus"></i>
+              </button>
+            </div>
           </div>
 
           <div class="form-field">
             <label for="formUnidad">Unidad de Medida</label>
-            <select id="formUnidad" name="unidad_medida_id" [(ngModel)]="alimentoForm.unidad_medida_id" required>
-              <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
-            </select>
+            <div class="input-with-button">
+              <select id="formUnidad" name="unidad_medida_id" [(ngModel)]="alimentoForm.unidad_medida_id" required>
+                <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+              </select>
+              <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalUnidad()">
+                <i class="pi pi-plus"></i>
+              </button>
+            </div>
           </div>
 
           <div class="form-grid-two">
@@ -220,6 +230,80 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="!alimFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Nuevo Tipo de Alimento -->
+  <div class="modal-overlay z-2000" *ngIf="mostrarModalTipo">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Crear Tipo de Alimento</h3>
+        <button type="button" class="close-btn" (click)="cerrarModalTipo()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarTipoAlimento()" #tipoFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="tipoNombre">Nombre del Tipo</label>
+            <input
+              type="text"
+              id="tipoNombre"
+              name="nombre"
+              [(ngModel)]="nuevoTipoForm.nombre"
+              required
+              placeholder="Ej. Concentrado, Harina"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalTipo()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!tipoFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Nueva Unidad de Medida -->
+  <div class="modal-overlay z-2000" *ngIf="mostrarModalUnidad">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Crear Unidad de Medida</h3>
+        <button type="button" class="close-btn" (click)="cerrarModalUnidad()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarUnidadMedida()" #unidadFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="unidadNombre">Nombre de la Unidad</label>
+            <input
+              type="text"
+              id="unidadNombre"
+              name="nombre"
+              [(ngModel)]="nuevoUnidadForm.nombre"
+              required
+              placeholder="Ej. Kilogramo, Bulto"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="unidadAbreviatura">Abreviatura</label>
+            <input
+              type="text"
+              id="unidadAbreviatura"
+              name="abreviatura"
+              [(ngModel)]="nuevoUnidadForm.abreviatura"
+              required
+              placeholder="Ej. kg, blt"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalUnidad()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!unidadFormRef.form.valid">
             Guardar
           </button>
         </div>

@@ -55,6 +55,13 @@ export class Alimentos implements OnInit {
     precio_unitario: 0,
   };
 
+  // Submodales para creación rápida
+  mostrarModalTipo = false;
+  nuevoTipoForm = { nombre: '' };
+
+  mostrarModalUnidad = false;
+  nuevoUnidadForm = { nombre: '', abreviatura: '' };
+
   constructor(
     private alimentoService: AlimentoService,
     private tipoAlimentoService: TipoAlimentoService,
@@ -185,6 +192,63 @@ export class Alimentos implements OnInit {
   cerrarModal(): void {
     this.mostrarModal = false;
     this.cdr.detectChanges();
+  }
+
+  // Métodos para Tipo de Alimento rápido
+  abrirModalTipo(): void {
+    this.nuevoTipoForm = { nombre: '' };
+    this.mostrarModalTipo = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalTipo(): void {
+    this.mostrarModalTipo = false;
+    this.cdr.detectChanges();
+  }
+
+  guardarTipoAlimento(): void {
+    if (!this.nuevoTipoForm.nombre.trim()) return;
+    this.tipoAlimentoService.createTipoAlimento({ nombre: this.nuevoTipoForm.nombre }).subscribe({
+      next: (tipo) => {
+        this.loadTiposAlimento();
+        this.alimentoForm.tipo_alimento_id = tipo.id_tipo_insumo;
+        this.cerrarModalTipo();
+      },
+      error: () => {
+        this.error = 'Error al crear tipo de alimento';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Métodos para Unidad de Medida rápida
+  abrirModalUnidad(): void {
+    this.nuevoUnidadForm = { nombre: '', abreviatura: '' };
+    this.mostrarModalUnidad = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalUnidad(): void {
+    this.mostrarModalUnidad = false;
+    this.cdr.detectChanges();
+  }
+
+  guardarUnidadMedida(): void {
+    if (!this.nuevoUnidadForm.nombre.trim() || !this.nuevoUnidadForm.abreviatura.trim()) return;
+    this.unidadMedidaService.createUnidadMedida({
+      nombre: this.nuevoUnidadForm.nombre,
+      abreviatura: this.nuevoUnidadForm.abreviatura
+    }).subscribe({
+      next: (unidad) => {
+        this.loadUnidadesMedida();
+        this.alimentoForm.unidad_medida_id = unidad.id_unidad;
+        this.cerrarModalUnidad();
+      },
+      error: () => {
+        this.error = 'Error al crear unidad de medida';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   guardarAlimento(): void {

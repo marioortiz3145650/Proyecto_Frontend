@@ -15,4 +15,8 @@ export class TipoAlimentoService {
   getTiposAlimento(): Observable<TipoAlimento[]> {
     return this.http.get<TipoAlimento[]>(this.apiUrl);
   }
+
+  createTipoAlimento(tipo: { nombre: string }): Observable<TipoAlimento> {
+    return this.http.post<TipoAlimento>(this.apiUrl, tipo);
+  }
 }
