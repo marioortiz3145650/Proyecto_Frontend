@@ -15,4 +15,8 @@ export class UnidadMedidaService {
   getUnidadesMedida(): Observable<UnidadMedida[]> {
     return this.http.get<UnidadMedida[]>(this.apiUrl);
   }
+
+  createUnidadMedida(unidad: { nombre: string; abreviatura: string }): Observable<UnidadMedida> {
+    return this.http.post<UnidadMedida>(this.apiUrl, unidad);
+  }
 }
