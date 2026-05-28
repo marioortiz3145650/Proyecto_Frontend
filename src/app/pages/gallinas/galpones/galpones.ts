@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GalponService } from '../../../services/galpon.service';
+import { LoteService } from '../../../services/lote';
 import { Galpon, FilterGalponParams } from '../../../interfaces/galpon.interface';
+import { Lote } from '../../../interfaces/lote.interface';
 import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 
 @Component({
@@ -14,6 +16,7 @@ import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../../in
 })
 export class Galpones implements OnInit {
   galpones: Galpon[] = [];
+  lotes: Lote[] = [];
   meta: PaginationMeta = {
     total: 0,
     page: 1,
@@ -29,18 +32,49 @@ export class Galpones implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterGalponParams = {};
-
   pages: number[] = [];
+  loading = false;
+  error: string | null = null;
+  Math = Math;
 
-  Math = Math; // Para usar en el template
+  // Variables para CRUD Modal
+  mostrarModal = false;
+  galponEditando: Galpon | null = null;
+  galponForm: {
+    nombre: string;
+    direccion: string;
+    lote_id?: number | null;
+  } = {
+    nombre: '',
+    direccion: '',
+    lote_id: null
+  };
 
-  constructor(private galponService: GalponService) {}
+  constructor(
+    private galponService: GalponService,
+    private loteService: LoteService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
+    this.cargarLotes();
     this.cargarGalpones();
   }
 
+  cargarLotes(): void {
+    this.loteService.getLotes({ page: 1, limit: 100 }).subscribe({
+      next: (res) => {
+        this.lotes = res.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cargar lotes:', err),
+    });
+  }
+
   cargarGalpones(): void {
+    this.loading = true;
+    this.error = null;
+
     const params: PaginationParams & Partial<FilterGalponParams> = {
       page: this.page,
       limit: this.limit,
@@ -54,9 +88,14 @@ export class Galpones implements OnInit {
         this.galpones = response.data;
         this.meta = response.meta;
         this.generarPaginas();
+        this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Error al cargar galpones:', error);
+      error: (err) => {
+        console.error('Error al cargar galpones:', err);
+        this.error = 'Error al cargar galpones';
+        this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -91,6 +130,72 @@ export class Galpones implements OnInit {
   cambiarLimite(): void {
     this.page = 1;
     this.cargarGalpones();
+  }
+
+  // Métodos CRUD
+  abrirModalCrear(): void {
+    this.galponEditando = null;
+    this.galponForm = {
+      nombre: '',
+      direccion: '',
+      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : null
+    };
+    this.mostrarModal = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirModalEditar(galpon: Galpon): void {
+    this.galponEditando = galpon;
+    this.galponForm = {
+      nombre: galpon.nombre,
+      direccion: galpon.direccion,
+      lote_id: galpon.lote?.id_lote || null
+    };
+    this.mostrarModal = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModal(): void {
+    this.mostrarModal = false;
+    this.cdr.detectChanges();
+  }
+
+  guardarGalpon(): void {
+    const payload: Partial<Galpon> & { lote_id?: number | null } = {
+      nombre: this.galponForm.nombre,
+      direccion: this.galponForm.direccion,
+      lote_id: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
+    };
+
+    if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
+      this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.cargarGalpones();
+        },
+        error: (err) => console.error('Error al editar galpón:', err),
+      });
+    } else {
+      this.galponService.createGalpon(payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.cargarGalpones();
+        },
+        error: (err) => console.error('Error al crear galpón:', err),
+      });
+    }
+  }
+
+  eliminarGalpon(id: number | undefined): void {
+    if (id === undefined) return;
+    if (confirm('¿Está seguro de que desea eliminar este galpón?')) {
+      this.galponService.deleteGalpon(id).subscribe({
+        next: () => {
+          this.cargarGalpones();
+        },
+        error: (err) => console.error('Error al eliminar galpón:', err),
+      });
+    }
   }
 
   generarPaginas(): void {

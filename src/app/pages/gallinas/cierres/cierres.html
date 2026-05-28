@@ -1,1 +1,57 @@
-<div class="cierres-container"><h2>Cierres</h2></div>
+<div class="cierres-container">
+  <h2>Cierres de Lotes</h2>
+
+  <div *ngIf="loading" class="loading">Cargando cierres...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Lote ID</th>
+          <th>Galpón ID</th>
+          <th>Fecha Cierre</th>
+          <th>Población (Ini / Fin)</th>
+          <th>Mortalidad %</th>
+          <th>Semanas</th>
+          <th>Prom. Prod %</th>
+          <th>Finanzas (Ingresos / Costos)</th>
+          <th>Ganancia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cierre of cierres">
+          <td>{{ cierre.id_cierre }}</td>
+          <td>{{ cierre.lote_id }}</td>
+          <td>{{ cierre.galpon_id }}</td>
+          <td>{{ cierre.fecha_cierre | date:'dd/MM/yyyy' }}</td>
+          <td>{{ cierre.cantidad_inicial }} / {{ cierre.cantidad_final }}</td>
+          <td>
+            <span class="badge active text-red">
+              {{ cierre.mortalidad_porcentaje | number:'1.2-2' }}% ({{ cierre.mortalidad_total }})
+            </span>
+          </td>
+          <td>{{ cierre.semanas_produccion }}</td>
+          <td>{{ cierre.promedio_produccion | number:'1.2-2' }}%</td>
+          <td>
+            <div class="financials">
+              <span class="income">+ ${{ cierre.ingresos_totales | number:'1.2-2' }}</span>
+              <span class="cost">- ${{ cierre.costo_total | number:'1.2-2' }}</span>
+            </div>
+          </td>
+          <td>
+            <span [class]="cierre.ganancia >= 0 ? 'profit positive' : 'profit negative'">
+              ${{ cierre.ganancia | number:'1.2-2' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="cierres.length === 0" class="empty">
+      No hay cierres registrados.
+    </div>
+  </div>
+</div>

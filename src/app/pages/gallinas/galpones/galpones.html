@@ -1,6 +1,10 @@
-@if (galpones.length > 0) {
 <div class="galpones-container">
-  <h2>Galpones</h2>
+  <div class="header-section">
+    <h2>Galpones</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Crear Galpón
+    </button>
+  </div>
 
   <!-- Filtros -->
   <div class="filters-card">
@@ -37,79 +41,77 @@
         />
       </div>
       <div class="filter-actions">
-        <button class="btn btn-primary" (click)="aplicarFiltros()">
-          Buscar
-        </button>
-        <button class="btn btn-secondary" (click)="limpiarFiltros()">
-          Limpiar
-        </button>
+        <button class="btn btn-primary" (click)="aplicarFiltros()">Buscar</button>
+        <button class="btn btn-secondary" (click)="limpiarFiltros()">Limpiar</button>
       </div>
     </div>
   </div>
 
+  <div *ngIf="loading" class="loading">Cargando galpones...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
   <!-- Tabla de resultados -->
-  <div class="table-container">
+  <div class="table-container" *ngIf="!loading && !error">
     <table class="table">
       <thead>
         <tr>
           <th (click)="ordenarPor('nombre')" style="cursor: pointer">
             Nombre
-            @if (sortBy === 'nombre') {
-              {{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}
-            }
+            <span *ngIf="sortBy === 'nombre'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th (click)="ordenarPor('direccion')" style="cursor: pointer">
             Dirección
-            @if (sortBy === 'direccion') {
-              {{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}
-            }
+            <span *ngIf="sortBy === 'direccion'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Lote</th>
           <th>Fecha Creación</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (galpon of galpones; track galpon.id_galpon) {
-        <tr>
+        <tr *ngFor="let galpon of galpones">
           <td>{{ galpon.nombre }}</td>
           <td>{{ galpon.direccion }}</td>
           <td>{{ galpon.lote?.id_lote || 'N/A' }}</td>
           <td>{{ galpon.fecha_creacion | date : 'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(galpon)">
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarGalpon(galpon.id_galpon)">
+                <i class="pi pi-trash"></i> Borrar
+              </button>
+            </div>
+          </td>
         </tr>
-        }
       </tbody>
     </table>
+
+    <div *ngIf="galpones.length === 0" class="empty">
+      No hay galpones registrados.
+    </div>
   </div>
 
   <!-- Paginación -->
-  <div class="pagination-container">
+  <div class="pagination-container" *ngIf="!loading && !error && galpones.length > 0">
     <div class="pagination-info">
       Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
-      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }}
-      registros
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
     </div>
     <div class="pagination-controls">
-      <button
-        class="btn btn-sm"
-        [disabled]="!meta.hasPrev"
-        (click)="cambiarPagina(meta.page - 1)"
-      >
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="cambiarPagina(page - 1)">
         Anterior
       </button>
-      @for (page of pages; track page) {
       <button
+        *ngFor="let p of pages"
         class="btn btn-sm"
-        [class.active]="page === meta.page"
-        (click)="cambiarPagina(page)"
+        [class.active]="p === meta.page"
+        (click)="cambiarPagina(p)"
       >
-        {{ page }}
+        {{ p }}
       </button>
-      }
-      <button
-        class="btn btn-sm"
-        [disabled]="!meta.hasNext"
-        (click)="cambiarPagina(meta.page + 1)"
-      >
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="cambiarPagina(page + 1)">
         Siguiente
       </button>
     </div>
@@ -119,13 +121,58 @@
         <option value="5">5</option>
         <option value="10">10</option>
         <option value="25">25</option>
-        <option value="50">50</option>
       </select>
     </div>
   </div>
+
+  <!-- Modal overlay de Galpón -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ galponEditando ? 'Editar Galpón' : 'Crear Galpón' }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarGalpon()" #galponFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formNombre">Nombre</label>
+            <input
+              type="text"
+              id="formNombre"
+              name="nombre"
+              [(ngModel)]="galponForm.nombre"
+              required
+              placeholder="Ingrese el nombre"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formDireccion">Dirección</label>
+            <input
+              type="text"
+              id="formDireccion"
+              name="direccion"
+              [(ngModel)]="galponForm.direccion"
+              required
+              placeholder="Ingrese la dirección"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formLote">Lote Asignado</label>
+            <select id="formLote" name="lote_id" [(ngModel)]="galponForm.lote_id">
+              <option [value]="null">Sin Lote</option>
+              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote #{{ lote.id_lote }} (Raza: {{ lote.raza?.nombre_raza || 'N/A' }})</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!galponFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-} @else {
-<div class="no-data">
-  <p>No hay galpones registrados.</p>
-</div>
-}

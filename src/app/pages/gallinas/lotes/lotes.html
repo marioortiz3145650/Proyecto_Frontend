@@ -1,1 +1,198 @@
-<div class="lotes-container"><h2>Lotes</h2></div>
+<div class="lotes-container">
+  <div class="header-section">
+    <h2>Lotes</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Crear Lote
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroRaza">Raza</label>
+        <select id="filtroRaza" [(ngModel)]="filtros.raza_id" (change)="applyFilters()">
+          <option [value]="undefined">Todas</option>
+          <option *ngFor="let raza of razas" [value]="raza.id_raza">{{ raza.nombre_raza }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroEdad">Edad (Semanas)</label>
+        <input
+          type="number"
+          id="filtroEdad"
+          [(ngModel)]="filtros.edad_semanas"
+          placeholder="Buscar por edad"
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando lotes...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortByField('id_lote')" style="cursor: pointer">
+            ID Lote
+            <span *ngIf="sortBy === 'id_lote'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Raza</th>
+          <th (click)="sortByField('edad_semanas')" style="cursor: pointer">
+            Edad (Semanas)
+            <span *ngIf="sortBy === 'edad_semanas'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('produccion_pct')" style="cursor: pointer">
+            Producción %
+            <span *ngIf="sortBy === 'produccion_pct'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Fecha Inicio</th>
+          <th>Fecha Fin</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lote of lotes">
+          <td>{{ lote.id_lote }}</td>
+          <td>{{ lote.raza?.nombre_raza || 'N/A' }}</td>
+          <td>{{ lote.edad_semanas }}</td>
+          <td>
+            <span class="badge active">{{ lote.produccion_pct | number:'1.2-2' }}%</span>
+          </td>
+          <td>{{ lote.fecha_inicio | date:'dd/MM/yyyy' }}</td>
+          <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : 'Activo' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.id_lote)">
+                <i class="pi pi-trash"></i> Borrar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="lotes.length === 0" class="empty">
+      No hay lotes registrados.
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && !error && lotes.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let p of pages"
+        class="btn btn-sm"
+        [class.active]="p === meta.page"
+        (click)="changePage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
+        Siguiente
+      </button>
+    </div>
+    <div class="items-per-page">
+      <label for="limitSelect">Items por página:</label>
+      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Lote -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ loteEditando ? 'Editar Lote' : 'Crear Lote' }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarLote()" #loteFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formRaza">Raza</label>
+            <select id="formRaza" name="raza_id" [(ngModel)]="loteForm.raza_id" required>
+              <option *ngFor="let raza of razas" [value]="raza.id_raza">{{ raza.nombre_raza }}</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formEdad">Edad (Semanas)</label>
+            <input
+              type="number"
+              id="formEdad"
+              name="edad_semanas"
+              [(ngModel)]="loteForm.edad_semanas"
+              required
+              min="1"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formProduccion">Producción (%)</label>
+            <input
+              type="number"
+              id="formProduccion"
+              name="produccion_pct"
+              [(ngModel)]="loteForm.produccion_pct"
+              required
+              min="0"
+              max="100"
+              step="0.01"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formFechaInicio">Fecha Inicio</label>
+            <input
+              type="date"
+              id="formFechaInicio"
+              name="fecha_inicio"
+              [(ngModel)]="loteForm.fecha_inicio"
+              required
+            />
+          </div>
+
+          <div class="form-field" *ngIf="loteEditando">
+            <label for="formFechaFin">Fecha Fin</label>
+            <input
+              type="date"
+              id="formFechaFin"
+              name="fecha_fin"
+              [(ngModel)]="loteForm.fecha_fin"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!loteFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -5,7 +5,7 @@ import { Lotes } from './pages/gallinas/lotes/lotes';
 import { Galpones } from './pages/gallinas/galpones/galpones';
 import { Razas } from './pages/gallinas/razas/razas';
 import { Cierres } from './pages/gallinas/cierres/cierres';
-import { Produccion } from './pages/produccion/produccion';
+import { ProduccionPage } from './pages/produccion/produccion';
 import { Alimentos } from './pages/alimentos/alimentos';
 import { Salud } from './pages/salud/salud';
 import { Alertas } from './pages/alertas/alertas';
@@ -20,7 +20,7 @@ export const routes: Routes = [
   { path: 'gallinas/galpones', component: Galpones },
   { path: 'gallinas/razas', component: Razas },
   { path: 'gallinas/cierres', component: Cierres },
-  { path: 'produccion', component: Produccion },
+  { path: 'produccion', component: ProduccionPage },
   { path: 'alimentos', component: Alimentos },
   { path: 'salud', component: Salud },
   { path: 'alertas', component: Alertas },

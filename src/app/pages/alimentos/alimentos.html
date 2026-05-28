@@ -1,1 +1,229 @@
-<div class="alimentos-container"><h2>Alimentos</h2></div>
+<div class="alimentos-container">
+  <div class="header-section">
+    <h2>Alimentos e Insumos</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Crear Alimento
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroNombre">Nombre</label>
+        <input
+          type="text"
+          id="filtroNombre"
+          [(ngModel)]="filtros.nombre"
+          placeholder="Buscar por nombre..."
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroTipo">Tipo de Alimento</label>
+        <select id="filtroTipo" [(ngModel)]="filtros.tipo_alimento" (change)="applyFilters()">
+          <option [value]="undefined">Todos</option>
+          <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroUnidad">Unidad de Medida</label>
+        <select id="filtroUnidad" [(ngModel)]="filtros.unidad_medida" (change)="applyFilters()">
+          <option [value]="undefined">Todas</option>
+          <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando inventario de alimentos...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortByField('id_insumo')" style="cursor: pointer">
+            ID Insumo
+            <span *ngIf="sortBy === 'id_insumo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('nombre')" style="cursor: pointer">
+            Nombre
+            <span *ngIf="sortBy === 'nombre'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Tipo Alimento</th>
+          <th>Unidad de Medida</th>
+          <th (click)="sortByField('stock_actual')" style="cursor: pointer">
+            Stock Actual
+            <span *ngIf="sortBy === 'stock_actual'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('stock_minimo')" style="cursor: pointer">
+            Stock Mínimo
+            <span *ngIf="sortBy === 'stock_minimo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('precio_unitario')" style="cursor: pointer">
+            Precio Unitario
+            <span *ngIf="sortBy === 'precio_unitario'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alim of alimentos">
+          <td>{{ alim.id_insumo }}</td>
+          <td><strong>{{ alim.nombre }}</strong></td>
+          <td>{{ alim.tipo_alimento?.nombre || 'N/A' }}</td>
+          <td>{{ alim.unidad_medida?.nombre }} ({{ alim.unidad_medida?.abreviatura }})</td>
+          <td>
+            <span class="badge" [class.active]="alim.stock_actual > alim.stock_minimo" [class.warning-badge]="alim.stock_actual <= alim.stock_minimo">
+              {{ alim.stock_actual | number:'1.2-2' }}
+            </span>
+          </td>
+          <td>{{ alim.stock_minimo | number:'1.2-2' }}</td>
+          <td>${{ alim.precio_unitario | number:'1.2-2' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(alim)">
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarAlimento(alim.id_insumo)">
+                <i class="pi pi-trash"></i> Borrar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="alimentos.length === 0" class="empty">
+      No hay alimentos registrados en el inventario.
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && !error && alimentos.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let p of pages"
+        class="btn btn-sm"
+        [class.active]="p === meta.page"
+        (click)="changePage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
+        Siguiente
+      </button>
+    </div>
+    <div class="items-per-page">
+      <label for="limitSelect">Items por página:</label>
+      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Alimento -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ alimentoEditando ? 'Editar Alimento' : 'Crear Alimento' }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarAlimento()" #alimFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formNombre">Nombre del Insumo / Alimento</label>
+            <input
+              type="text"
+              id="formNombre"
+              name="nombre"
+              [(ngModel)]="alimentoForm.nombre"
+              required
+              placeholder="Ej. Soya Premium"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formTipo">Tipo de Alimento</label>
+            <select id="formTipo" name="tipo_alimento_id" [(ngModel)]="alimentoForm.tipo_alimento_id" required>
+              <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formUnidad">Unidad de Medida</label>
+            <select id="formUnidad" name="unidad_medida_id" [(ngModel)]="alimentoForm.unidad_medida_id" required>
+              <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+            </select>
+          </div>
+
+          <div class="form-grid-two">
+            <div class="form-field">
+              <label for="formStockActual">Stock Actual</label>
+              <input
+                type="number"
+                id="formStockActual"
+                name="stock_actual"
+                [(ngModel)]="alimentoForm.stock_actual"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="formStockMinimo">Stock Mínimo (Alerta)</label>
+              <input
+                type="number"
+                id="formStockMinimo"
+                name="stock_minimo"
+                [(ngModel)]="alimentoForm.stock_minimo"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="formPrecio">Precio Unitario ($)</label>
+            <input
+              type="number"
+              id="formPrecio"
+              name="precio_unitario"
+              [(ngModel)]="alimentoForm.precio_unitario"
+              required
+              min="0"
+              step="0.01"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!alimFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
