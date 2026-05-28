@@ -1,1 +1,103 @@
-<div class="razas-container"><h2>Razas</h2></div>
+<div class="razas-container">
+  <div class="header-section">
+    <h2>Razas</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Crear Raza
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando razas...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID Raza</th>
+          <th>Nombre Raza</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let raza of razas">
+          <td>{{ raza.id_raza }}</td>
+          <td>{{ raza.nombre_raza }}</td>
+          <td>
+            <span [class]="raza.activo ? 'badge active' : 'badge inactive'">
+              {{ raza.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons-container">
+              <div class="toggle-switch">
+                <input
+                  type="checkbox"
+                  [id]="'toggle-raza-' + raza.id_raza"
+                  [checked]="raza.activo"
+                  (change)="toggleRazaStatus(raza)"
+                />
+                <label [for]="'toggle-raza-' + raza.id_raza" class="toggle-slider"></label>
+              </div>
+              <div class="action-buttons">
+                <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(raza)">
+                  <i class="pi pi-pencil"></i> Editar
+                </button>
+                <button class="btn btn-delete btn-sm" (click)="eliminarRaza(raza.id_raza)">
+                  <i class="pi pi-trash"></i> Borrar
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="razas.length === 0" class="empty">
+      No hay razas registradas.
+    </div>
+  </div>
+
+  <!-- Modal overlay de Raza -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ razaEditando ? 'Editar Raza' : 'Crear Raza' }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarRaza()" #razaFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formNombre">Nombre Raza</label>
+            <input
+              type="text"
+              id="formNombre"
+              name="nombre_raza"
+              [(ngModel)]="razaForm.nombre_raza"
+              required
+              placeholder="Ingrese el nombre de la raza"
+            />
+          </div>
+
+          <div class="form-field checkbox-field" *ngIf="razaEditando">
+            <label class="checkbox-container">
+              <input
+                type="checkbox"
+                name="activo"
+                [(ngModel)]="razaForm.activo"
+              />
+              <span class="checkmark"></span> Activo
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!razaFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

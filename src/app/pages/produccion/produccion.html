@@ -1,2 +1,196 @@
-<div class="produccion-container"><h2>Producción</h2></div>
-<style>.produccion-container { padding: 20px; }</style>
+<div class="produccion-container">
+  <div class="header-section">
+    <h2>Producción de Huevos</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Registrar Producción
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroLote">Lote</label>
+        <select id="filtroLote" [(ngModel)]="filtros.lote" (change)="applyFilters()">
+          <option [value]="undefined">Todos</option>
+          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroFecha">Fecha</label>
+        <input
+          type="date"
+          id="filtroFecha"
+          [(ngModel)]="filtros.fecha"
+          (change)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando registros de producción...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortByField('fecha')" style="cursor: pointer">
+            Fecha
+            <span *ngIf="sortBy === 'fecha'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Lote</th>
+          <th>Jumbo</th>
+          <th>AAA</th>
+          <th>AA</th>
+          <th>A</th>
+          <th>B</th>
+          <th>C</th>
+          <th (click)="sortByField('total')" style="cursor: pointer">
+            Total Huevos
+            <span *ngIf="sortBy === 'total'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Registrado Por</th>
+          <th>Fecha Registro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prod of producciones">
+          <td>{{ prod.fecha | date:'dd/MM/yyyy' }}</td>
+          <td>Lote {{ prod.lote?.id_lote }}</td>
+          <td>{{ prod.jumbo }}</td>
+          <td>{{ prod.aaa }}</td>
+          <td>{{ prod.aa }}</td>
+          <td>{{ prod.a }}</td>
+          <td>{{ prod.b }}</td>
+          <td>{{ prod.c }}</td>
+          <td>
+            <span class="badge active">{{ prod.total }}</span>
+          </td>
+          <td>{{ prod.creado_por?.nombre || prod.creado_por?.nombre_usuario || 'N/A' }}</td>
+          <td>{{ prod.fecha_registro | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="producciones.length === 0" class="empty">
+      No hay registros de producción.
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && !error && producciones.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let p of pages"
+        class="btn btn-sm"
+        [class.active]="p === meta.page"
+        (click)="changePage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
+        Siguiente
+      </button>
+    </div>
+    <div class="items-per-page">
+      <label for="limitSelect">Items por página:</label>
+      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Producción -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Registrar Producción</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarProduccion()" #prodFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formFecha">Fecha de Recolección</label>
+            <input
+              type="date"
+              id="formFecha"
+              name="fecha"
+              [(ngModel)]="produccionForm.fecha"
+              required
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formLote">Lote</label>
+            <select id="formLote" name="lote_id" [(ngModel)]="produccionForm.lote_id" required>
+              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formUsuario">Registrado Por (Trabajador)</label>
+            <select id="formUsuario" name="creado_por" [(ngModel)]="produccionForm.creado_por" required>
+              <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }} ({{ u.nombre_usuario }})</option>
+            </select>
+          </div>
+
+          <div class="form-grid-three">
+            <div class="form-field">
+              <label for="formJumbo">Jumbo</label>
+              <input type="number" id="formJumbo" name="jumbo" [(ngModel)]="produccionForm.jumbo" min="0" required />
+            </div>
+            <div class="form-field">
+              <label for="formAAA">AAA</label>
+              <input type="number" id="formAAA" name="aaa" [(ngModel)]="produccionForm.aaa" min="0" required />
+            </div>
+            <div class="form-field">
+              <label for="formAA">AA</label>
+              <input type="number" id="formAA" name="aa" [(ngModel)]="produccionForm.aa" min="0" required />
+            </div>
+            <div class="form-field">
+              <label for="formA">A</label>
+              <input type="number" id="formA" name="a" [(ngModel)]="produccionForm.a" min="0" required />
+            </div>
+            <div class="form-field">
+              <label for="formB">B</label>
+              <input type="number" id="formB" name="b" [(ngModel)]="produccionForm.b" min="0" required />
+            </div>
+            <div class="form-field">
+              <label for="formC">C</label>
+              <input type="number" id="formC" name="c" [(ngModel)]="produccionForm.c" min="0" required />
+            </div>
+          </div>
+
+          <div class="total-summary-card">
+            <span>Total Recolectado:</span>
+            <strong>{{ totalFormEggs }} Huevos</strong>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!prodFormRef.form.valid || totalFormEggs <= 0">
+            Registrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

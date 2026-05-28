@@ -1,1 +1,203 @@
-<div class="salud-container"><h2>Salud</h2></div>
+<div class="salud-container">
+  <div class="header-section">
+    <h2>Historial de Salud (Bajas / Muertes)</h2>
+    <button class="btn btn-primary" (click)="abrirModalCrear()">
+      <i class="pi pi-plus mr-2"></i>Registrar Muerte
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroLote">Lote</label>
+        <select id="filtroLote" [(ngModel)]="filtros.lote" (change)="applyFilters()">
+          <option [value]="undefined">Todos</option>
+          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }}</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroFecha">Fecha</label>
+        <input
+          type="date"
+          id="filtroFecha"
+          [(ngModel)]="filtros.fecha"
+          (change)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroCausa">Causa</label>
+        <input
+          type="text"
+          id="filtroCausa"
+          [(ngModel)]="filtros.causa"
+          placeholder="Buscar por causa..."
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando registros de salud...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortByField('id_muerte')" style="cursor: pointer">
+            ID
+            <span *ngIf="sortBy === 'id_muerte'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('fecha')" style="cursor: pointer">
+            Fecha
+            <span *ngIf="sortBy === 'fecha'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Lote</th>
+          <th (click)="sortByField('cantidad')" style="cursor: pointer">
+            Cantidad (Aves)
+            <span *ngIf="sortBy === 'cantidad'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Causa</th>
+          <th>Registrado Por</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of muertes">
+          <td>{{ m.id_muerte }}</td>
+          <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+          <td><strong>Lote {{ m.lote?.id_lote }}</strong></td>
+          <td>
+            <span class="badge warning-badge">{{ m.cantidad }} aves</span>
+          </td>
+          <td>{{ m.causa }}</td>
+          <td>{{ m.usuario?.nombre || m.usuario?.nombre_usuario || 'N/A' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(m)">
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarMuerte(m.id_muerte)">
+                <i class="pi pi-trash"></i> Borrar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="muertes.length === 0" class="empty">
+      No se han registrado bajas en el historial.
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && !error && muertes.length > 0">
+    <div class="pagination-info">
+      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
+      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
+    </div>
+    <div class="pagination-controls">
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let p of pages"
+        class="btn btn-sm"
+        [class.active]="p === meta.page"
+        (click)="changePage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
+        Siguiente
+      </button>
+    </div>
+    <div class="items-per-page">
+      <label for="limitSelect">Items por página:</label>
+      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Registro de Muerte -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ muerteEditando ? 'Editar Registro de Muerte' : 'Registrar Muerte (Baja)' }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarMuerte()" #muerteFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formFecha">Fecha de Ocurrencia</label>
+            <input
+              type="date"
+              id="formFecha"
+              name="fecha"
+              [(ngModel)]="muerteForm.fecha"
+              required
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formLote">Lote Afectado</label>
+            <select id="formLote" name="loteId" [(ngModel)]="muerteForm.loteId" required>
+              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formUsuario">Registrado Por</label>
+            <select id="formUsuario" name="usuarioId" [(ngModel)]="muerteForm.usuarioId" required>
+              <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }} ({{ u.nombre_usuario }})</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formCantidad">Cantidad de Aves</label>
+            <input
+              type="number"
+              id="formCantidad"
+              name="cantidad"
+              [(ngModel)]="muerteForm.cantidad"
+              required
+              min="1"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formCausa">Causa / Observación</label>
+            <input
+              type="text"
+              id="formCausa"
+              name="causa"
+              [(ngModel)]="muerteForm.causa"
+              required
+              placeholder="Ej. Calor extremo, infección respiratoria"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!muerteFormRef.form.valid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
