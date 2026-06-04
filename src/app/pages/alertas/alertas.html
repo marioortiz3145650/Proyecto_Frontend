@@ -1,0 +1,253 @@
+<div class="alertas-page-container">
+  <div class="header-section">
+    <h2>Centro de Alertas</h2>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="marcarTodasComoLeidas()" [disabled]="loading || alertas.length === 0">
+        <i class="pi pi-check-all mr-2"></i>Marcar visibles como leídas
+      </button>
+      <button class="btn btn-primary" (click)="abrirModalCrear()">
+        <i class="pi pi-plus mr-2"></i>Crear Alerta
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="filtroTipo">Tipo de Alerta</label>
+        <select id="filtroTipo" [(ngModel)]="filtros.tipo" (ngModelChange)="applyFilters()">
+          <option [ngValue]="undefined">Todos</option>
+          <option value="stock">Stock de Insumos</option>
+          <option value="salud">Salud y Bajas</option>
+          <option value="produccion">Producción de Huevos</option>
+          <option value="general">Aviso General</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroPrioridad">Nivel de Prioridad</label>
+        <select id="filtroPrioridad" [(ngModel)]="filtros.prioridad" (ngModelChange)="applyFilters()">
+          <option [ngValue]="undefined">Todas</option>
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filtroEstado">Estado</label>
+        <select id="filtroEstado" [(ngModel)]="filtros.leida" (ngModelChange)="applyFilters()">
+          <option [ngValue]="undefined">Todas</option>
+          <option [ngValue]="false">No leídas</option>
+          <option [ngValue]="true">Leídas</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="limitSelect">Items por página</label>
+        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando centro de alertas...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Tabla de resultados -->
+  <div class="table-container" *ngIf="!loading && !error">
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortByField('id_alerta')" style="cursor: pointer">
+            ID
+            <span *ngIf="sortBy === 'id_alerta'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('titulo')" style="cursor: pointer">
+            Título / Detalle
+            <span *ngIf="sortBy === 'titulo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('tipo')" style="cursor: pointer">
+            Tipo
+            <span *ngIf="sortBy === 'tipo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('prioridad')" style="cursor: pointer">
+            Prioridad
+            <span *ngIf="sortBy === 'prioridad'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('leida')" style="cursor: pointer">
+            Estado
+            <span *ngIf="sortBy === 'leida'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th (click)="sortByField('fecha_creacion')" style="cursor: pointer">
+            Fecha
+            <span *ngIf="sortBy === 'fecha_creacion'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
+          </th>
+          <th>Asociado a</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alert of alertas" [class.row-read]="alert.leida">
+          <td>{{ alert.id_alerta }}</td>
+          <td>
+            <div class="title-cell">
+              <strong>{{ alert.titulo }}</strong>
+              <p class="desc-text">{{ alert.mensaje }}</p>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-type" [class.type-stock]="alert.tipo === 'stock'" [class.type-salud]="alert.tipo === 'salud'" [class.type-produccion]="alert.tipo === 'produccion'">
+              {{ alert.tipo | uppercase }}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-priority" [class.badge-alta]="alert.prioridad === 'alta'" [class.badge-media]="alert.prioridad === 'media'" [class.badge-baja]="alert.prioridad === 'baja'">
+              {{ alert.prioridad | uppercase }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.badge-read]="alert.leida" [class.badge-unread]="!alert.leida">
+              {{ alert.leida ? 'Leída' : 'No leída' }}
+            </span>
+          </td>
+          <td>{{ alert.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div class="association-cell">
+              <span *ngIf="alert.lote" class="ref-badge"><i class="pi pi-list"></i> Lote {{ alert.lote.id_lote }}</span>
+              <span *ngIf="alert.galpon" class="ref-badge"><i class="pi pi-box"></i> Galpón {{ alert.galpon.nombre }}</span>
+              <span *ngIf="!alert.lote && !alert.galpon" class="muted-text">-</span>
+            </div>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" [title]="alert.leida ? 'Marcar como no leída' : 'Marcar como leída'" (click)="toggleLeida(alert)">
+                <i class="pi" [ngClass]="alert.leida ? 'pi-eye-slash' : 'pi-eye'"></i>
+                {{ alert.leida ? 'No leída' : 'Leída' }}
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarAlerta(alert.id_alerta)">
+                <i class="pi pi-trash"></i> Borrar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="alertas.length === 0" class="empty">
+      No se encontraron alertas en este momento.
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && !error && alertas.length > 0"> 
+    <div class="pagination-controls">
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let p of pages"
+        class="btn btn-sm"
+        [class.active]="p === meta.page"
+        (click)="changePage(p)"
+      >
+        {{ p }}
+      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
+        Siguiente
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal overlay de Alerta -->
+  <div class="modal-overlay" *ngIf="mostrarModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Registrar Nueva Alerta</h3>
+        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarAlerta()" #alertaFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="formTitulo">Título de la Alerta</label>
+            <input
+              type="text"
+              id="formTitulo"
+              name="titulo"
+              [(ngModel)]="alertaForm.titulo"
+              required
+              placeholder="Ej. Temperatura Excesiva en Galpón 2"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="formMensaje">Descripción / Mensaje</label>
+            <textarea
+              id="formMensaje"
+              name="mensaje"
+              [(ngModel)]="alertaForm.mensaje"
+              required
+              rows="3"
+              placeholder="Detalla lo sucedido en la granja..."
+            ></textarea>
+          </div>
+
+          <div class="form-grid-two">
+            <div class="form-field">
+              <label for="formTipo">Tipo de Alerta</label>
+              <select id="formTipo" name="tipo" [(ngModel)]="alertaForm.tipo" required>
+                <option value="stock">Stock de Insumos</option>
+                <option value="salud">Salud y Bajas</option>
+                <option value="produccion">Producción de Huevos</option>
+                <option value="general">Aviso General</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="formPrioridad">Prioridad</label>
+              <select id="formPrioridad" name="prioridad" [(ngModel)]="alertaForm.prioridad" required>
+                <option value="alta">Alta (Crítica)</option>
+                <option value="media">Media (Advertencia)</option>
+                <option value="baja">Baja (Informativa)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-two">
+            <div class="form-field">
+              <label for="formLote">Lote Asociado (Opcional)</label>
+              <select id="formLote" name="lote_id" [(ngModel)]="alertaForm.lote_id">
+                <option [ngValue]="undefined">Ninguno</option>
+                <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }}</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="formGalpon">Galpón Asociado (Opcional)</label>
+              <select id="formGalpon" name="galpon_id" [(ngModel)]="alertaForm.galpon_id">
+                <option [ngValue]="undefined">Ninguno</option>
+                <option *ngFor="let galpon of galpones" [value]="galpon.id_galpon">{{ galpon.nombre }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!alertaFormRef.form.valid || guardando">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
