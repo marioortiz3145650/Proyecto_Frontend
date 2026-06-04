@@ -45,4 +45,7 @@ export class LoteService {
   deleteLote(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+  toggleActivo(id: number): Observable<Lote> {
+    return this.http.post<Lote>(`${this.apiUrl}/${id}/toggle`, {});
+  }
 }

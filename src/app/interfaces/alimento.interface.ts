@@ -16,11 +16,10 @@ export interface Alimento {
   unidad_medida?: UnidadMedida;
   stock_actual: number;
   stock_minimo: number;
-  precio_unitario: number;
+  precio_unitario?: number;
 }
-
 export interface FilterAlimentoParams {
-  nombre?: string;
+  id_insumo?: number;
   tipo_alimento?: number;
   unidad_medida?: number;
 }

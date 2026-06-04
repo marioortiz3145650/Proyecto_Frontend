@@ -30,7 +30,7 @@ export class Salud implements OnInit {
   };
 
   page = 1;
-  limit = 10;
+  limit = 5;
   sortBy = 'fecha';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
@@ -69,30 +69,32 @@ export class Salud implements OnInit {
   }
 
   loadLotes(): void {
-    this.loteService.getLotes({ limit: 100 }).subscribe({
-      next: (response) => {
-        this.lotes = response.data;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.error = 'Error al cargar lotes';
-        this.cdr.detectChanges();
-      }
-    });
+  this.loteService.getLotes({ limit: 100 }).subscribe({
+    next: (response) => {
+      this.lotes = response.data;
+      setTimeout(() => this.cdr.detectChanges());
+    },
+    error: () => {
+      this.error = 'Error al cargar lotes';
+      setTimeout(() => this.cdr.detectChanges());
+    }
+  });
   }
 
   loadUsuarios(): void {
     this.usersService.getUsers({ limit: 100 }).subscribe({
       next: (response) => {
         this.usuarios = response.data;
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       },
       error: () => {
         this.error = 'Error al cargar usuarios';
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       }
     });
   }
+
+  guardando = false;
 
   loadMuertes(): void {
     this.loading = true;
@@ -103,8 +105,12 @@ export class Salud implements OnInit {
       limit: this.limit,
       sortBy: this.sortBy,
       order: this.sortOrder,
-      ...this.filtros,
     };
+
+    if (this.filtros.lote !== undefined && this.filtros.lote !== null) {
+      params.lote = this.filtros.lote;
+    }
+    if (this.filtros.fecha) params.fecha = this.filtros.fecha;
 
     this.muerteService.getMuertes(params).subscribe({
       next: (response) => {
@@ -182,13 +188,15 @@ export class Salud implements OnInit {
 
   cerrarModal(): void {
     this.mostrarModal = false;
+    this.guardando = false;
     this.cdr.detectChanges();
   }
 
   guardarMuerte(): void {
-    if (!this.muerteForm.loteId || !this.muerteForm.usuarioId) {
-      return;
-    }
+    if (this.guardando) return;
+    if (!this.muerteForm.loteId || !this.muerteForm.usuarioId) return;
+
+    this.guardando = true;
 
     const payload = {
       fecha: this.muerteForm.fecha,
@@ -200,25 +208,13 @@ export class Salud implements OnInit {
 
     if (this.muerteEditando) {
       this.muerteService.updateMuerte(this.muerteEditando.id_muerte, payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.loadMuertes();
-        },
-        error: () => {
-          this.error = 'Error al actualizar registro de muerte';
-          this.cdr.detectChanges();
-        },
+        next: () => { this.cerrarModal(); this.loadMuertes(); },
+        error: () => { this.error = 'Error al actualizar registro de muerte'; this.guardando = false; this.cdr.detectChanges(); },
       });
     } else {
       this.muerteService.createMuerte(payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.loadMuertes();
-        },
-        error: () => {
-          this.error = 'Error al registrar muerte';
-          this.cdr.detectChanges();
-        },
+        next: () => { this.cerrarModal(); this.loadMuertes(); },
+        error: () => { this.error = 'Error al registrar muerte'; this.guardando = false; this.cdr.detectChanges(); },
       });
     }
   }

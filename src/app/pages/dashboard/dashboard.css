@@ -1,0 +1,375 @@
+/* ============================================
+   DASHBOARD — Granja Avícola
+   Aesthetic: Industrial-Natural / Campo + Data
+   Palette: Tierra, verde hoja, crema, carbón
+   Font: Syne (headers) + DM Sans (body)
+============================================ */
+
+/* Fuentes heredadas del tema global de la app */
+
+/* ── Variables ─────────────────────────────── */
+:root {
+  --bg:          #f4f1eb;
+  --surface:     #ffffff;
+  --surface-2:   #f9f7f2;
+  --border:      #e3ddd4;
+  --text-main:   #1f1c17;
+  --text-soft:   #7a7066;
+  --text-xsoft:  #b0a89e;
+
+  --green:       #3a7d44;
+  --green-light: #e8f5eb;
+  --green-text:  #2a5e32;
+
+  --blue:        #2563a8;
+  --blue-light:  #e8f0fb;
+  --blue-text:   #1a4a82;
+
+  --orange:      #c05c1a;
+  --orange-light:#fdf0e6;
+  --orange-text: #9a4412;
+
+  --gray:        #6b7280;
+  --gray-light:  #f0efed;
+  --gray-text:   #374151;
+
+  --red:         #c0392b;
+  --red-light:   #fdecea;
+
+  --radius:      12px;
+  --radius-sm:   8px;
+  --shadow:      0 1px 3px rgba(31,28,23,.07), 0 4px 16px rgba(31,28,23,.06);
+  --shadow-sm:   0 1px 2px rgba(31,28,23,.06);
+}
+
+/* ── Reset base ────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Container ─────────────────────────────── */
+.dashboard-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 28px 48px;
+}
+
+/* ── Header ────────────────────────────────── */
+.dash-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  gap: 16px;
+}
+
+.dash-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.dash-subtitle {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-soft);
+  text-transform: capitalize;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: var(--text-main);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .18s, transform .12s;
+  white-space: nowrap;
+}
+
+.btn-refresh:hover {
+  background: #3a3630;
+  transform: translateY(-1px);
+}
+
+.btn-refresh:active { transform: translateY(0); }
+
+/* ── Loading overlay ───────────────────────── */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Metric cards grid ─────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s, transform .15s;
+}
+
+.metric-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+
+.metric-card.green  .metric-icon { background: var(--green-light);  color: var(--green); }
+.metric-card.gray   .metric-icon { background: var(--gray-light);   color: var(--gray); }
+.metric-card.blue   .metric-icon { background: var(--blue-light);   color: var(--blue); }
+.metric-card.orange .metric-icon { background: var(--orange-light); color: var(--orange); }
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+/* ── Dash content grid ─────────────────────── */
+.dash-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Cards ─────────────────────────────────── */
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+
+.dash-card:hover { box-shadow: var(--shadow); }
+
+.dash-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.card-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.card-header h3 i {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.ver-mas {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color .15s;
+}
+
+.ver-mas:hover { color: var(--green); }
+
+.card-body { padding: 0; }
+
+/* ── Table ─────────────────────────────────── */
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.dash-table thead tr {
+  background: var(--surface-2);
+}
+
+.dash-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-table td {
+  padding: 11px 16px;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.dash-table tbody tr:last-child td { border-bottom: none; }
+
+.dash-table tbody tr {
+  transition: background .12s;
+}
+
+.dash-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* ── Badges ────────────────────────────────── */
+.badge-green,
+.badge-red {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-green {
+  background: var(--green-light);
+  color: var(--green-text);
+}
+
+.badge-red {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+/* ── Empty states ──────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: var(--text-xsoft);
+  font-size: 0.875rem;
+}
+
+.empty-state i {
+  font-size: 1.8rem;
+  opacity: .4;
+}
+
+.empty-state.good {
+  color: var(--green-text);
+}
+
+.empty-state.good i {
+  opacity: .7;
+  color: var(--green);
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container { padding: 20px 16px 40px; }
+
+  .dash-header h1 { font-size: 1.5rem; }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .metric-value { font-size: 1.4rem; }
+
+  .dash-content {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-card.full-width { grid-column: 1; }
+
+  .dash-table th,
+  .dash-table td { padding: 9px 12px; }
+}
+
+@media (max-width: 480px) {
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .metric-card { padding: 14px 14px; gap: 10px; }
+  .metric-icon { width: 38px; height: 38px; font-size: 1rem; }
+  .metric-value { font-size: 1.25rem; }
+}

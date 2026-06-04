@@ -23,7 +23,7 @@ export class AlimentoService {
       if (params.limit !== undefined) httpParams = httpParams.set('limit', params.limit.toString());
       if (params.sortBy !== undefined) httpParams = httpParams.set('sortBy', params.sortBy);
       if (params.order !== undefined) httpParams = httpParams.set('order', params.order);
-      if (params.nombre !== undefined) httpParams = httpParams.set('nombre', params.nombre);
+      if (params.id_insumo !== undefined) httpParams = httpParams.set('id_insumo', params.id_insumo.toString());
       if (params.tipo_alimento !== undefined) httpParams = httpParams.set('tipo_alimento', params.tipo_alimento.toString());
       if (params.unidad_medida !== undefined) httpParams = httpParams.set('unidad_medida', params.unidad_medida.toString());
     }
@@ -41,7 +41,6 @@ export class AlimentoService {
     unidad_medida_id: number;
     stock_actual: number;
     stock_minimo: number;
-    precio_unitario: number;
   }): Observable<Alimento> {
     return this.http.post<Alimento>(this.apiUrl, alimento);
   }

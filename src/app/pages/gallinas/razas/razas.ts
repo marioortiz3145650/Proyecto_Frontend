@@ -37,23 +37,23 @@ export class Razas implements OnInit {
   }
 
   loadRazas(): void {
-    this.loading = true;
-    this.error = null;
+  this.loading = true;
+  this.error = null;
 
-    this.razaService.getRazas().subscribe({
-      next: (data) => {
-        this.razas = data;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error al cargar razas:', err);
-        this.error = 'Error al cargar razas';
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
+  this.razaService.getRazasAll().subscribe({
+    next: (data) => {
+      this.razas = data;
+      this.loading = false;
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error al cargar razas:', err);
+      this.error = 'Error al cargar razas';
+      this.loading = false;
+      this.cdr.detectChanges();
+    },
+  });
+}
 
   toggleRazaStatus(raza: Raza): void {
     const nuevoEstado = !raza.activo;

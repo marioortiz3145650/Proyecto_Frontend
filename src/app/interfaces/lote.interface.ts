@@ -7,6 +7,7 @@ export interface Lote {
   produccion_pct: number;
   fecha_inicio: string | Date;
   fecha_fin: string | Date | null;
+  total_gallinas?: number;
   fecha_creacion: string | Date;
 }
 

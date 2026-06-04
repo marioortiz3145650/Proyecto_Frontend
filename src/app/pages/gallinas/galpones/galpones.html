@@ -40,6 +40,16 @@
           (keyup.enter)="aplicarFiltros()"
         />
       </div>
+
+      <div class="filter-field">
+        <label for="itemsPerPage">Items por página</label>
+        <select id="itemsPerPage" [(ngModel)]="limit" (ngModelChange)="cambiarLimite()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+        </select>
+      </div>
+
       <div class="filter-actions">
         <button class="btn btn-primary" (click)="aplicarFiltros()">Buscar</button>
         <button class="btn btn-secondary" (click)="limpiarFiltros()">Limpiar</button>
@@ -95,33 +105,10 @@
 
   <!-- Paginación -->
   <div class="pagination-container" *ngIf="!loading && !error && galpones.length > 0">
-    <div class="pagination-info">
-      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
-      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
-    </div>
     <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="cambiarPagina(page - 1)">
-        Anterior
-      </button>
-      <button
-        *ngFor="let p of pages"
-        class="btn btn-sm"
-        [class.active]="p === meta.page"
-        (click)="cambiarPagina(p)"
-      >
-        {{ p }}
-      </button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="cambiarPagina(page + 1)">
-        Siguiente
-      </button>
-    </div>
-    <div class="items-per-page">
-      <label for="itemsPerPage">Items por página:</label>
-      <select id="itemsPerPage" [(ngModel)]="limit" (change)="cambiarLimite()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="25">25</option>
-      </select>
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="cambiarPagina(page - 1)">Anterior</button>
+      <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="cambiarPagina(p)">{{ p }}</button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="cambiarPagina(page + 1)">Siguiente</button>
     </div>
   </div>
 

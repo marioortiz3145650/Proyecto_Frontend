@@ -29,6 +29,15 @@
         />
       </div>
 
+      <div class="filter-field">
+        <label for="limitSelect">Items por página</label>
+        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+        </select>
+      </div>
+
       <div class="filter-actions">
         <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
         <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
@@ -49,14 +58,12 @@
             <span *ngIf="sortBy === 'id_lote'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Raza</th>
+          <th>Total Gallinas</th>
           <th (click)="sortByField('edad_semanas')" style="cursor: pointer">
             Edad (Semanas)
             <span *ngIf="sortBy === 'edad_semanas'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
-          <th (click)="sortByField('produccion_pct')" style="cursor: pointer">
-            Producción %
-            <span *ngIf="sortBy === 'produccion_pct'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
-          </th>
+          <th>Estado</th>
           <th>Fecha Inicio</th>
           <th>Fecha Fin</th>
           <th>Acciones</th>
@@ -66,14 +73,26 @@
         <tr *ngFor="let lote of lotes">
           <td>{{ lote.id_lote }}</td>
           <td>{{ lote.raza?.nombre_raza || 'N/A' }}</td>
-          <td>{{ lote.edad_semanas }}</td>
+          <td><strong>{{ lote.total_gallinas || 0 | number }}</strong> aves</td>
+          <td>{{ calcularEdadActual(lote) }} semanas</td>
           <td>
-            <span class="badge active">{{ lote.produccion_pct | number:'1.2-2' }}%</span>
+            <span [class]="lote.fecha_fin ? 'badge inactive' : 'badge active'">
+              {{ lote.fecha_fin ? 'Cerrado' : 'Activo' }}
+            </span>
           </td>
           <td>{{ lote.fecha_inicio | date:'dd/MM/yyyy' }}</td>
-          <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : 'Activo' }}</td>
+          <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : '—' }}</td>
           <td>
             <div class="action-buttons">
+              <div class="toggle-switch">
+                <input
+                  type="checkbox"
+                  [id]="'toggle-lote-' + lote.id_lote"
+                  [checked]="!lote.fecha_fin"
+                  (change)="toggleLote(lote)"
+                />
+                <label [for]="'toggle-lote-' + lote.id_lote" class="toggle-slider"></label>
+              </div>
               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
                 <i class="pi pi-pencil"></i> Editar
               </button>
@@ -93,35 +112,12 @@
 
   <!-- Paginación -->
   <div class="pagination-container" *ngIf="!loading && !error && lotes.length > 0">
-    <div class="pagination-info">
-      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
-      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
-    </div>
     <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        Anterior
-      </button>
-      <button
-        *ngFor="let p of pages"
-        class="btn btn-sm"
-        [class.active]="p === meta.page"
-        (click)="changePage(p)"
-      >
-        {{ p }}
-      </button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        Siguiente
-      </button>
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">Anterior</button>
+      <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="changePage(p)">{{ p }}</button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">Siguiente</button>
     </div>
-    <div class="items-per-page">
-      <label for="limitSelect">Items por página:</label>
-      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="25">25</option>
-      </select>
-    </div>
-  </div>
+</div>
 
   <!-- Modal overlay de Lote -->
   <div class="modal-overlay" *ngIf="mostrarModal">
@@ -134,9 +130,27 @@
         <div class="modal-body">
           <div class="form-field">
             <label for="formRaza">Raza</label>
-            <select id="formRaza" name="raza_id" [(ngModel)]="loteForm.raza_id" required>
-              <option *ngFor="let raza of razas" [value]="raza.id_raza">{{ raza.nombre_raza }}</option>
-            </select>
+            <div class="field-with-action">
+              <select id="formRaza" name="raza_id" [(ngModel)]="loteForm.raza_id" required>
+                <option [value]="undefined" disabled>— No hay razas disponibles —</option>
+                <option *ngFor="let raza of razas" [value]="raza.id_raza">{{ raza.nombre_raza }}</option>
+              </select>
+              <button type="button" class="btn-add-inline" (click)="abrirModalRaza()" title="Agregar raza">
+                <i class="pi pi-plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="formTotalGallinas">Total Gallinas Iniciales *</label>
+            <input
+              type="number"
+              id="formTotalGallinas"
+              name="total_gallinas"
+              [(ngModel)]="loteForm.total_gallinas"
+              required
+              min="0"
+            />
           </div>
 
           <div class="form-field">
@@ -148,20 +162,6 @@
               [(ngModel)]="loteForm.edad_semanas"
               required
               min="1"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="formProduccion">Producción (%)</label>
-            <input
-              type="number"
-              id="formProduccion"
-              name="produccion_pct"
-              [(ngModel)]="loteForm.produccion_pct"
-              required
-              min="0"
-              max="100"
-              step="0.01"
             />
           </div>
 
@@ -195,4 +195,35 @@
       </form>
     </div>
   </div>
+
+  <!-- Mini modal raza -->
+  <div class="modal-overlay" *ngIf="mostrarModalRaza">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>Nueva Raza</h3>
+        <button class="close-btn" (click)="cerrarModalRaza()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarRazaRapida()" #razaFormRef="ngForm">
+        <div class="modal-body">
+          <div class="form-field">
+            <label for="nuevaRazaNombre">Nombre de la raza</label>
+            <input
+              type="text"
+              id="nuevaRazaNombre"
+              name="nombre_raza"
+              [(ngModel)]="nuevaRazaNombre"
+              required
+              placeholder="Ej: Hy-Line Brown"
+            />
+          </div>
+          <div *ngIf="errorRaza" class="error">{{ errorRaza }}</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalRaza()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!razaFormRef.form.valid">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </div>

@@ -12,6 +12,10 @@ export class RazaService {
 
   constructor(private http: HttpClient) {}
 
+    getRazasAll(): Observable<Raza[]> {
+    return this.http.get<Raza[]>(`${this.apiUrl}?all=true`);
+  }
+
   getRazas(): Observable<Raza[]> {
     return this.http.get<Raza[]>(this.apiUrl);
   }

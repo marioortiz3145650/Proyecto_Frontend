@@ -11,29 +11,37 @@
     <h3>Filtros</h3>
     <div class="filters-grid">
       <div class="filter-field">
-        <label for="filtroNombre">Nombre</label>
+        <label for="filtroId">ID Insumo</label>
         <input
-          type="text"
-          id="filtroNombre"
-          [(ngModel)]="filtros.nombre"
-          placeholder="Buscar por nombre..."
+          type="number"
+          id="filtroId"
+          [(ngModel)]="filtros.id_insumo"
+          placeholder="Buscar por ID..."
           (keyup.enter)="applyFilters()"
         />
       </div>
 
       <div class="filter-field">
         <label for="filtroTipo">Tipo de Alimento</label>
-        <select id="filtroTipo" [(ngModel)]="filtros.tipo_alimento" (change)="applyFilters()">
-          <option [value]="undefined">Todos</option>
+        <select id="filtroTipo" [(ngModel)]="filtros.tipo_alimento" (ngModelChange)="applyFilters()">
+          <option [ngValue]="undefined">Todos</option>
           <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
         </select>
       </div>
 
       <div class="filter-field">
         <label for="filtroUnidad">Unidad de Medida</label>
-        <select id="filtroUnidad" [(ngModel)]="filtros.unidad_medida" (change)="applyFilters()">
-          <option [value]="undefined">Todas</option>
+        <select id="filtroUnidad" [(ngModel)]="filtros.unidad_medida" (ngModelChange)="applyFilters()">
+          <option [ngValue]="undefined">Todas</option>
           <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="limitSelect">Items por página</label>
+        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
         </select>
       </div>
 
@@ -63,16 +71,12 @@
           <th>Tipo Alimento</th>
           <th>Unidad de Medida</th>
           <th (click)="sortByField('stock_actual')" style="cursor: pointer">
-            Stock Actual
+            Cantidad
             <span *ngIf="sortBy === 'stock_actual'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th (click)="sortByField('stock_minimo')" style="cursor: pointer">
             Stock Mínimo
             <span *ngIf="sortBy === 'stock_minimo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
-          </th>
-          <th (click)="sortByField('precio_unitario')" style="cursor: pointer">
-            Precio Unitario
-            <span *ngIf="sortBy === 'precio_unitario'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Acciones</th>
         </tr>
@@ -83,13 +87,8 @@
           <td><strong>{{ alim.nombre }}</strong></td>
           <td>{{ alim.tipo_alimento?.nombre || 'N/A' }}</td>
           <td>{{ alim.unidad_medida?.nombre }} ({{ alim.unidad_medida?.abreviatura }})</td>
-          <td>
-            <span class="badge" [class.active]="alim.stock_actual > alim.stock_minimo" [class.warning-badge]="alim.stock_actual <= alim.stock_minimo">
-              {{ alim.stock_actual | number:'1.2-2' }}
-            </span>
-          </td>
+          <td>{{ alim.stock_actual | number:'1.2-2' }}</td>
           <td>{{ alim.stock_minimo | number:'1.2-2' }}</td>
-          <td>${{ alim.precio_unitario | number:'1.2-2' }}</td>
           <td>
             <div class="action-buttons">
               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(alim)">
@@ -110,11 +109,7 @@
   </div>
 
   <!-- Paginación -->
-  <div class="pagination-container" *ngIf="!loading && !error && alimentos.length > 0">
-    <div class="pagination-info">
-      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
-      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
-    </div>
+  <div class="pagination-container" *ngIf="!loading && !error && alimentos.length > 0"> 
     <div class="pagination-controls">
       <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
         Anterior
@@ -130,14 +125,6 @@
       <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
         Siguiente
       </button>
-    </div>
-    <div class="items-per-page">
-      <label for="limitSelect">Items por página:</label>
-      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="25">25</option>
-      </select>
     </div>
   </div>
 
@@ -166,6 +153,7 @@
             <label for="formTipo">Tipo de Alimento</label>
             <div class="input-with-button">
               <select id="formTipo" name="tipo_alimento_id" [(ngModel)]="alimentoForm.tipo_alimento_id" required>
+                <option [value]="undefined" disabled>Primero crea un tipo alimento</option>
                 <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
               </select>
               <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalTipo()">
@@ -178,6 +166,7 @@
             <label for="formUnidad">Unidad de Medida</label>
             <div class="input-with-button">
               <select id="formUnidad" name="unidad_medida_id" [(ngModel)]="alimentoForm.unidad_medida_id" required>
+                <option [value]="undefined" disabled> Primero crea una unidad de medida</option>
                 <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
               </select>
               <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalUnidad()">
@@ -188,7 +177,7 @@
 
           <div class="form-grid-two">
             <div class="form-field">
-              <label for="formStockActual">Stock Actual</label>
+              <label for="formStockActual">Cantidad</label>
               <input
                 type="number"
                 id="formStockActual"
@@ -214,18 +203,7 @@
             </div>
           </div>
 
-          <div class="form-field">
-            <label for="formPrecio">Precio Unitario ($)</label>
-            <input
-              type="number"
-              id="formPrecio"
-              name="precio_unitario"
-              [(ngModel)]="alimentoForm.precio_unitario"
-              required
-              min="0"
-              step="0.01"
-            />
-          </div>
+          
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
@@ -275,7 +253,7 @@
         <h3>Crear Unidad de Medida</h3>
         <button type="button" class="close-btn" (click)="cerrarModalUnidad()">&times;</button>
       </div>
-      <form (ngSubmit)="guardarUnidadMedida()" #unidadFormRef="ngForm">
+      <form (ngSubmit)="guardarUnidadMedida()" #focusedFormRef="ngForm">
         <div class="modal-body">
           <div class="form-field">
             <label for="unidadNombre">Nombre de la Unidad</label>
@@ -303,7 +281,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModalUnidad()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="!unidadFormRef.form.valid">
+          <button type="submit" class="btn btn-primary" [disabled]="!focusedFormRef.form.valid">
             Guardar
           </button>
         </div>
