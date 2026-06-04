@@ -131,6 +131,7 @@ export class Consumo implements OnInit {
   }
 
   abrirModalCrear(): void {
+    const adminUser = this.usuarios.find(u => u.nombre_usuario === 'admin' || u.nombre.toLowerCase().includes('admin'));
     this.movimientoForm = {
       fecha: new Date().toISOString().substring(0, 10),
       cantidad: 0,
@@ -138,7 +139,7 @@ export class Consumo implements OnInit {
       observaciones: '',
       insumo_id: this.alimentos.length > 0 ? this.alimentos[0].id_insumo : undefined,
       lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      creado_por: this.usuarios.length > 0 ? this.usuarios[0].id : undefined,
+      creado_por: adminUser ? adminUser.id : (this.usuarios.length > 0 ? this.usuarios[0].id : undefined),
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -172,8 +173,10 @@ export class Consumo implements OnInit {
         this.cerrarModal();
         this.loadMovimientos();
       },
-      error: () => {
+      error: (err) => {
         this.error = 'Error al registrar consumo de alimento';
+        const errorMsg = err.error?.message || 'Error al registrar consumo de alimento';
+        alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
         this.guardando = false;
         this.cdr.detectChanges();
       }

@@ -19,4 +19,12 @@ export class UnidadMedidaService {
   createUnidadMedida(unidad: { nombre: string; abreviatura: string }): Observable<UnidadMedida> {
     return this.http.post<UnidadMedida>(this.apiUrl, unidad);
   }
+
+  updateUnidadMedida(id: number, unidad: Partial<{ nombre: string; abreviatura: string }>): Observable<UnidadMedida> {
+    return this.http.patch<UnidadMedida>(`${this.apiUrl}/${id}`, unidad);
+  }
+
+  deleteUnidadMedida(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
 }

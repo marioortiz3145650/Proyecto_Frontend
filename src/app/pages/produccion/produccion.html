@@ -68,7 +68,7 @@
             <span *ngIf="sortBy === 'total'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Registrado Por</th>
-          <th>Fecha Registro</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -85,7 +85,16 @@
             <span class="badge active">{{ prod.total }}</span>
           </td>
           <td>{{ prod.creado_por?.nombre || prod.creado_por?.nombre_usuario || 'N/A' }}</td>
-          <td>{{ prod.fecha_registro | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(prod)">
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+              <button class="btn btn-delete btn-sm" (click)="eliminarProduccion(prod.id_produccion)">
+                <i class="pi pi-trash"></i> Eliminar
+              </button>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -108,7 +117,7 @@
   <div class="modal-overlay" *ngIf="mostrarModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Registrar Producción</h3>
+        <h3>{{ produccionEditando ? 'Editar Producción' : 'Registrar Producción' }}</h3>
         <button class="close-btn" (click)="cerrarModal()">&times;</button>
       </div>
       <form (ngSubmit)="guardarProduccion()" #prodFormRef="ngForm">
@@ -173,7 +182,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="!prodFormRef.form.valid || totalFormEggs <= 0">
-            Registrar
+            {{ produccionEditando ? 'Guardar Cambios' : 'Registrar' }}
           </button>
         </div>
       </form>

@@ -125,7 +125,11 @@ export class Razas implements OnInit {
         next: () => {
           this.loadRazas();
         },
-        error: (err) => console.error('Error al eliminar raza:', err),
+        error: (err) => {
+          console.error('Error al eliminar raza:', err);
+          const errorMsg = err.error?.message || 'No se pudo eliminar la raza.';
+          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+        },
       });
     }
   }

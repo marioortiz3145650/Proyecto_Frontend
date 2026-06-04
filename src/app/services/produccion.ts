@@ -19,12 +19,18 @@ export class ProduccionService {
     let httpParams = new HttpParams();
 
     if (params) {
-      if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
-      if (params.limit !== undefined) httpParams = httpParams.set('limit', params.limit.toString());
-      if (params.sortBy !== undefined) httpParams = httpParams.set('sortBy', params.sortBy);
-      if (params.order !== undefined) httpParams = httpParams.set('order', params.order);
-      if (params.fecha !== undefined) httpParams = httpParams.set('fecha', params.fecha);
-      if (params.lote !== undefined) httpParams = httpParams.set('lote', params.lote.toString());
+      Object.keys(params).forEach(key => {
+        const val = (params as any)[key];
+        if (
+          val !== undefined &&
+          val !== null &&
+          val !== '' &&
+          val !== 'null' &&
+          val !== 'undefined'
+        ) {
+          httpParams = httpParams.set(key, val.toString());
+        }
+      });
     }
 
     return this.http.get<PaginatedResponse<Produccion>>(this.apiUrl, { params: httpParams });
@@ -42,5 +48,23 @@ export class ProduccionService {
     creado_por: string;
   }): Observable<Produccion> {
     return this.http.post<Produccion>(this.apiUrl, produccion);
+  }
+
+  updateProduccion(id: number, produccion: Partial<{
+    fecha: string;
+    jumbo?: number;
+    aaa?: number;
+    aa?: number;
+    a?: number;
+    b?: number;
+    c?: number;
+    lote_id: number;
+    creado_por: string;
+  }>): Observable<Produccion> {
+    return this.http.patch<Produccion>(`${this.apiUrl}/${id}`, produccion);
+  }
+
+  deleteProduccion(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 }
