@@ -258,12 +258,12 @@ h2 {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: #f50f45;
   color: #fff;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #5a6268;
+  background-color: #c6153e;
 }
 
 .btn-sm {
