@@ -1,4 +1,4 @@
-.galpones-container {
+.consumo-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
@@ -22,6 +22,7 @@ h2 {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
+  color: black;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
@@ -33,7 +34,7 @@ h2 {
 
 .filters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
   align-items: end;
 }
@@ -51,11 +52,10 @@ h2 {
 
 .filter-field input,
 .filter-field select,
-.items-per-page select,
 .form-field input,
 .form-field select {
   padding: 8px 12px;
-  border: 1px solid hsl(0, 0%, 87%);
+  border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   color: black;
@@ -64,11 +64,10 @@ h2 {
 
 .filter-field input:focus,
 .filter-field select:focus,
-.items-per-page select:focus,
 .form-field input:focus,
 .form-field select:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #198754;
 }
 
 .filter-actions {
@@ -84,8 +83,8 @@ h2 {
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 900px;
-  font-size: 16px;
+  min-width: 1000px;
+  font-size: 15px;
 }
 
 .table thead {
@@ -94,7 +93,7 @@ h2 {
 
 .table th,
 .table td {
-  padding: 16px 20px;
+  padding: 14px 18px;
   text-align: left;
   border-bottom: 1px solid #dee2e6;
   vertical-align: middle;
@@ -108,6 +107,26 @@ h2 {
 
 .table tbody tr:hover {
   background-color: #f8f9fa;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.warning-badge {
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .btn {
@@ -159,15 +178,6 @@ h2 {
   gap: 8px;
 }
 
-.btn-edit {
-  background-color: #0d6efd;
-  color: white;
-}
-
-.btn-edit:hover {
-  background-color: #0b5ed7;
-}
-
 .btn-delete {
   background-color: #dc3545;
   color: white;
@@ -194,46 +204,12 @@ h2 {
   padding: 20px;
   text-align: center;
   font-size: 16px;
-  color: #4b5563;
 }
 
 .error {
   color: #dc3545;
   background-color: #f8d7da;
   border-radius: 6px;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.pagination-info {
-  color: #666;
-  font-size: 14px;
-}
-
-.pagination-controls {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: black;
-  margin: auto;
-  flex-wrap: wrap;
-}
-
-.items-per-page {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.items-per-page label {
-  font-size: 14px;
-  color: #666;
 }
 
 /* Modal Overlay Styles */
@@ -305,6 +281,12 @@ h2 {
   color: #555;
 }
 
+.form-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
 .modal-footer {
   padding: 16px 20px;
   background: #f8f9fa;
@@ -315,7 +297,7 @@ h2 {
 }
 
 @media (max-width: 768px) {
-  .galpones-container {
+  .consumo-container {
     padding: 12px;
   }
 
@@ -323,18 +305,11 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .pagination-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pagination-controls,
-  .items-per-page,
-  .filter-actions {
-    justify-content: center;
-  }
-
   .modal-card {
     max-width: 90%;
+  }
+
+  .form-grid-two {
+    grid-template-columns: 1fr;
   }
 }

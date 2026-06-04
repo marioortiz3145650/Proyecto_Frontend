@@ -105,12 +105,12 @@ h2 {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: #f50f45;
   color: #fff;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #5c636a;
+  background-color: #9d1325;
 }
 
 .btn-sm {
@@ -164,6 +164,7 @@ h2 {
   padding: 20px;
   text-align: center;
   font-size: 16px;
+  color: #4b5563;
 }
 
 .error {
@@ -296,6 +297,8 @@ input:checked + .toggle-slider:before {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+  color: black;
+  background-color: #D4D4D4;
 }
 
 .checkbox-field {

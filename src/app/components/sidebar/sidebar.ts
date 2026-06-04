@@ -60,12 +60,18 @@ export class SidebarComponent {
       children: [
         { label: 'Lotes', icon: 'pi pi-list', route: '/gallinas/lotes' },
         { label: 'Galpones', icon: 'pi pi-box', route: '/gallinas/galpones' },
-        { label: 'Razas', icon: 'pi pi-book', route: '/gallinas/razas' },
-        { label: 'Cierres', icon: 'pi pi-calendar', route: '/gallinas/cierres' }
+        { label: 'Razas', icon: 'pi pi-book', route: '/gallinas/razas' }
       ]
     },
     { label: 'Producción', icon: 'pi pi-chart-line', route: '/produccion' },
-    { label: 'Alimentos', icon: 'pi pi-shopping-cart', route: '/alimentos' },
+    { 
+      label: 'Alimentación', 
+      icon: 'pi pi-shopping-cart',
+      children: [
+        { label: 'Alimentos', icon: 'pi pi-list', route: '/alimentacion/alimentos' },
+        { label: 'Consumo', icon: 'pi pi-calendar-plus', route: '/alimentacion/consumo' }
+      ]
+    },
     { label: 'Salud', icon: 'pi pi-heart', route: '/salud' },
     { label: 'Alertas', icon: 'pi pi-bell', route: '/alertas' },
     { label: 'Reportes', icon: 'pi pi-file', route: '/reportes' },

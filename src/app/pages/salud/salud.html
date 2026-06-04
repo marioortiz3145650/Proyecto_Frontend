@@ -13,8 +13,8 @@
       <div class="filter-field">
         <label for="filtroLote">Lote</label>
         <select id="filtroLote" [(ngModel)]="filtros.lote" (change)="applyFilters()">
-          <option [value]="undefined">Todos</option>
-          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }}</option>
+          <option [ngValue]="undefined">Todos</option>
+          <option *ngFor="let lote of lotes" [ngValue]="lote.id_lote">Lote {{ lote.id_lote }}</option>
         </select>
       </div>
 
@@ -37,6 +37,15 @@
           placeholder="Buscar por causa..."
           (keyup.enter)="applyFilters()"
         />
+      </div>
+
+      <div class="filter-field">
+        <label for="limitSelect">Items por página</label>
+        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+        </select>
       </div>
 
       <div class="filter-actions">
@@ -103,33 +112,10 @@
 
   <!-- Paginación -->
   <div class="pagination-container" *ngIf="!loading && !error && muertes.length > 0">
-    <div class="pagination-info">
-      Mostrando {{ meta.page * meta.limit - meta.limit + 1 }} -
-      {{ Math.min(meta.page * meta.limit, meta.total) }} de {{ meta.total }} registros
-    </div>
     <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        Anterior
-      </button>
-      <button
-        *ngFor="let p of pages"
-        class="btn btn-sm"
-        [class.active]="p === meta.page"
-        (click)="changePage(p)"
-      >
-        {{ p }}
-      </button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        Siguiente
-      </button>
-    </div>
-    <div class="items-per-page">
-      <label for="limitSelect">Items por página:</label>
-      <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="25">25</option>
-      </select>
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">Anterior</button>
+      <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="changePage(p)">{{ p }}</button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">Siguiente</button>
     </div>
   </div>
 

@@ -22,6 +22,7 @@ h2 {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
+  color: black;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
@@ -49,6 +50,7 @@ h2 {
   color: #666;
 }
 
+
 .filter-field input,
 .filter-field select,
 .items-per-page select,
@@ -58,7 +60,10 @@ h2 {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+  color: black;
+  background-color: #D4D4D4;
 }
+
 
 .filter-field input:focus,
 .filter-field select:focus,
@@ -159,12 +164,12 @@ h2 {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: #f50f45;
   color: #fff;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #5c636a;
+  background-color: #9d1325;
 }
 
 .btn-sm {
@@ -237,6 +242,7 @@ h2 {
   display: flex;
   gap: 6px;
   align-items: center;
+  margin: auto;
   flex-wrap: wrap;
 }
 

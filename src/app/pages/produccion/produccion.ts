@@ -30,7 +30,7 @@ export class ProduccionPage implements OnInit {
   };
 
   page = 1;
-  limit = 10;
+  limit = 5;
   sortBy = 'fecha';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
@@ -109,8 +109,13 @@ export class ProduccionPage implements OnInit {
       limit: this.limit,
       sortBy: this.sortBy,
       order: this.sortOrder,
-      ...this.filtros,
     };
+
+    if (this.filtros.lote !== undefined && this.filtros.lote !== null) {
+      params.lote = this.filtros.lote;
+    }
+    if (this.filtros.fecha_inicio) params.fecha_inicio = this.filtros.fecha_inicio;
+    if (this.filtros.fecha_fin) params.fecha_fin = this.filtros.fecha_fin;
 
     this.produccionService.getProducciones(params).subscribe({
       next: (response) => {

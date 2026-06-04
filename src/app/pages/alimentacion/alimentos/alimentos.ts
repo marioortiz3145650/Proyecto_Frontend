@@ -1,11 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AlimentoService } from '../../services/alimento';
-import { TipoAlimentoService } from '../../services/tipo-alimento';
-import { UnidadMedidaService } from '../../services/unidad-medida';
-import { Alimento, TipoAlimento, UnidadMedida, FilterAlimentoParams } from '../../interfaces/alimento.interface';
-import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
+import { AlimentoService } from '../../../services/alimento';
+import { TipoAlimentoService } from '../../../services/tipo-alimento';
+import { UnidadMedidaService } from '../../../services/unidad-medida';
+import { Alimento, TipoAlimento, UnidadMedida, FilterAlimentoParams } from '../../../interfaces/alimento.interface';
+import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 
 @Component({
   selector: 'app-alimentos',
@@ -19,26 +19,21 @@ export class Alimentos implements OnInit {
   tiposAlimento: TipoAlimento[] = [];
   unidadesMedida: UnidadMedida[] = [];
   meta: PaginationMeta = {
-    total: 0,
-    page: 1,
-    limit: 10,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false,
+    total: 0, page: 1, limit: 5, totalPages: 0, hasNext: false, hasPrev: false,
   };
 
   page = 1;
-  limit = 10;
-  sortBy = 'nombre';
+  limit = 5;
+  sortBy = 'id_insumo';
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterAlimentoParams = {};
   pages: number[] = [];
   loading = false;
+  guardando = false;
   error: string | null = null;
   Math = Math;
 
-  // Variables para CRUD Modal
   mostrarModal = false;
   alimentoEditando: Alimento | null = null;
   alimentoForm: {
@@ -47,15 +42,12 @@ export class Alimentos implements OnInit {
     unidad_medida_id?: number;
     stock_actual: number;
     stock_minimo: number;
-    precio_unitario: number;
   } = {
     nombre: '',
     stock_actual: 0,
     stock_minimo: 0,
-    precio_unitario: 0,
   };
 
-  // Submodales para creación rápida
   mostrarModalTipo = false;
   nuevoTipoForm = { nombre: '' };
 
@@ -77,27 +69,15 @@ export class Alimentos implements OnInit {
 
   loadTiposAlimento(): void {
     this.tipoAlimentoService.getTiposAlimento().subscribe({
-      next: (data) => {
-        this.tiposAlimento = data;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.error = 'Error al cargar tipos de alimento';
-        this.cdr.detectChanges();
-      }
+      next: (data) => { this.tiposAlimento = data; this.cdr.detectChanges(); },
+      error: () => { this.error = 'Error al cargar tipos de alimento'; this.cdr.detectChanges(); }
     });
   }
 
   loadUnidadesMedida(): void {
     this.unidadMedidaService.getUnidadesMedida().subscribe({
-      next: (data) => {
-        this.unidadesMedida = data;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.error = 'Error al cargar unidades de medida';
-        this.cdr.detectChanges();
-      }
+      next: (data) => { this.unidadesMedida = data; this.cdr.detectChanges(); },
+      error: () => { this.error = 'Error al cargar unidades de medida'; this.cdr.detectChanges(); }
     });
   }
 
@@ -110,8 +90,17 @@ export class Alimentos implements OnInit {
       limit: this.limit,
       sortBy: this.sortBy,
       order: this.sortOrder,
-      ...this.filtros,
     };
+
+    if (this.filtros.id_insumo !== undefined && this.filtros.id_insumo !== null) {
+      params.id_insumo = this.filtros.id_insumo;
+    }
+    if (this.filtros.tipo_alimento !== undefined && this.filtros.tipo_alimento !== null) {
+      params.tipo_alimento = this.filtros.tipo_alimento;
+    }
+    if (this.filtros.unidad_medida !== undefined && this.filtros.unidad_medida !== null) {
+      params.unidad_medida = this.filtros.unidad_medida;
+    }
 
     this.alimentoService.getAlimentos(params).subscribe({
       next: (response) => {
@@ -129,16 +118,8 @@ export class Alimentos implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.page = 1;
-    this.loadAlimentos();
-  }
-
-  clearFilters(): void {
-    this.filtros = {};
-    this.page = 1;
-    this.loadAlimentos();
-  }
+  applyFilters(): void { this.page = 1; this.loadAlimentos(); }
+  clearFilters(): void { this.filtros = {}; this.page = 1; this.loadAlimentos(); }
 
   sortByField(field: string): void {
     if (this.sortBy === field) {
@@ -156,20 +137,17 @@ export class Alimentos implements OnInit {
     this.loadAlimentos();
   }
 
-  changeLimit(): void {
-    this.page = 1;
-    this.loadAlimentos();
-  }
+  changeLimit(): void { this.page = 1; this.loadAlimentos(); }
 
   abrirModalCrear(): void {
     this.alimentoEditando = null;
+    this.guardando = false;
     this.alimentoForm = {
       nombre: '',
       tipo_alimento_id: this.tiposAlimento.length > 0 ? this.tiposAlimento[0].id_tipo_insumo : undefined,
       unidad_medida_id: this.unidadesMedida.length > 0 ? this.unidadesMedida[0].id_unidad : undefined,
       stock_actual: 0,
       stock_minimo: 0,
-      precio_unitario: 0,
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -177,34 +155,22 @@ export class Alimentos implements OnInit {
 
   abrirModalEditar(alimento: Alimento): void {
     this.alimentoEditando = alimento;
+    this.guardando = false;
     this.alimentoForm = {
       nombre: alimento.nombre,
       tipo_alimento_id: alimento.tipo_alimento?.id_tipo_insumo,
       unidad_medida_id: alimento.unidad_medida?.id_unidad,
       stock_actual: Number(alimento.stock_actual),
       stock_minimo: Number(alimento.stock_minimo),
-      precio_unitario: Number(alimento.precio_unitario),
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
   }
 
-  cerrarModal(): void {
-    this.mostrarModal = false;
-    this.cdr.detectChanges();
-  }
+  cerrarModal(): void { this.mostrarModal = false; this.guardando = false; this.cdr.detectChanges(); }
 
-  // Métodos para Tipo de Alimento rápido
-  abrirModalTipo(): void {
-    this.nuevoTipoForm = { nombre: '' };
-    this.mostrarModalTipo = true;
-    this.cdr.detectChanges();
-  }
-
-  cerrarModalTipo(): void {
-    this.mostrarModalTipo = false;
-    this.cdr.detectChanges();
-  }
+  abrirModalTipo(): void { this.nuevoTipoForm = { nombre: '' }; this.mostrarModalTipo = true; this.cdr.detectChanges(); }
+  cerrarModalTipo(): void { this.mostrarModalTipo = false; this.cdr.detectChanges(); }
 
   guardarTipoAlimento(): void {
     if (!this.nuevoTipoForm.nombre.trim()) return;
@@ -214,24 +180,12 @@ export class Alimentos implements OnInit {
         this.alimentoForm.tipo_alimento_id = tipo.id_tipo_insumo;
         this.cerrarModalTipo();
       },
-      error: () => {
-        this.error = 'Error al crear tipo de alimento';
-        this.cdr.detectChanges();
-      }
+      error: () => { this.error = 'Error al crear tipo de alimento'; this.cdr.detectChanges(); }
     });
   }
 
-  // Métodos para Unidad de Medida rápida
-  abrirModalUnidad(): void {
-    this.nuevoUnidadForm = { nombre: '', abreviatura: '' };
-    this.mostrarModalUnidad = true;
-    this.cdr.detectChanges();
-  }
-
-  cerrarModalUnidad(): void {
-    this.mostrarModalUnidad = false;
-    this.cdr.detectChanges();
-  }
+  abrirModalUnidad(): void { this.nuevoUnidadForm = { nombre: '', abreviatura: '' }; this.mostrarModalUnidad = true; this.cdr.detectChanges(); }
+  cerrarModalUnidad(): void { this.mostrarModalUnidad = false; this.cdr.detectChanges(); }
 
   guardarUnidadMedida(): void {
     if (!this.nuevoUnidadForm.nombre.trim() || !this.nuevoUnidadForm.abreviatura.trim()) return;
@@ -244,17 +198,15 @@ export class Alimentos implements OnInit {
         this.alimentoForm.unidad_medida_id = unidad.id_unidad;
         this.cerrarModalUnidad();
       },
-      error: () => {
-        this.error = 'Error al crear unidad de medida';
-        this.cdr.detectChanges();
-      }
+      error: () => { this.error = 'Error al crear unidad de medida'; this.cdr.detectChanges(); }
     });
   }
 
   guardarAlimento(): void {
-    if (!this.alimentoForm.tipo_alimento_id || !this.alimentoForm.unidad_medida_id) {
-      return;
-    }
+    if (this.guardando) return;
+    if (!this.alimentoForm.tipo_alimento_id || !this.alimentoForm.unidad_medida_id) return;
+
+    this.guardando = true;
 
     const payload = {
       nombre: this.alimentoForm.nombre,
@@ -262,30 +214,17 @@ export class Alimentos implements OnInit {
       unidad_medida_id: Number(this.alimentoForm.unidad_medida_id),
       stock_actual: Number(this.alimentoForm.stock_actual),
       stock_minimo: Number(this.alimentoForm.stock_minimo),
-      precio_unitario: Number(this.alimentoForm.precio_unitario),
     };
 
     if (this.alimentoEditando) {
       this.alimentoService.updateAlimento(this.alimentoEditando.id_insumo, payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.loadAlimentos();
-        },
-        error: () => {
-          this.error = 'Error al actualizar alimento';
-          this.cdr.detectChanges();
-        },
+        next: () => { this.cerrarModal(); this.loadAlimentos(); },
+        error: () => { this.error = 'Error al actualizar alimento'; this.guardando = false; this.cdr.detectChanges(); },
       });
     } else {
       this.alimentoService.createAlimento(payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.loadAlimentos();
-        },
-        error: () => {
-          this.error = 'Error al registrar alimento';
-          this.cdr.detectChanges();
-        },
+        next: () => { this.cerrarModal(); this.loadAlimentos(); },
+        error: () => { this.error = 'Error al registrar alimento'; this.guardando = false; this.cdr.detectChanges(); },
       });
     }
   }
@@ -293,13 +232,8 @@ export class Alimentos implements OnInit {
   eliminarAlimento(id: number): void {
     if (confirm('¿Está seguro de que desea eliminar este alimento/insumo?')) {
       this.alimentoService.deleteAlimento(id).subscribe({
-        next: () => {
-          this.loadAlimentos();
-        },
-        error: () => {
-          this.error = 'Error al eliminar alimento';
-          this.cdr.detectChanges();
-        },
+        next: () => { this.loadAlimentos(); },
+        error: () => { this.error = 'Error al eliminar alimento'; this.cdr.detectChanges(); },
       });
     }
   }
@@ -308,17 +242,12 @@ export class Alimentos implements OnInit {
     const totalPages = this.meta.totalPages;
     const currentPage = this.meta.page;
     const maxVisiblePages = 5;
-
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-
     this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
+    for (let i = startPage; i <= endPage; i++) { this.pages.push(i); }
   }
 }

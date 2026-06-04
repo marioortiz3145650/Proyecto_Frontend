@@ -27,7 +27,7 @@ export class Galpones implements OnInit {
   };
 
   page = 1;
-  limit = 10;
+  limit = 5;
   sortBy = 'nombre';
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
@@ -161,30 +161,30 @@ export class Galpones implements OnInit {
   }
 
   guardarGalpon(): void {
-    const payload: Partial<Galpon> & { lote_id?: number | null } = {
-      nombre: this.galponForm.nombre,
-      direccion: this.galponForm.direccion,
-      lote_id: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
-    };
+  const payload: any = {
+    nombre: this.galponForm.nombre,
+    direccion: this.galponForm.direccion,
+    lote: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
+  };
 
-    if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
-      this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.cargarGalpones();
-        },
-        error: (err) => console.error('Error al editar galpón:', err),
-      });
-    } else {
-      this.galponService.createGalpon(payload).subscribe({
-        next: () => {
-          this.cerrarModal();
-          this.cargarGalpones();
-        },
-        error: (err) => console.error('Error al crear galpón:', err),
-      });
-    }
+  if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
+    this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
+      next: () => {
+        this.cerrarModal();
+        this.cargarGalpones();
+      },
+      error: (err) => console.error('Error al editar galpón:', err),
+    });
+  } else {
+    this.galponService.createGalpon(payload).subscribe({
+      next: () => {
+        this.cerrarModal();
+        this.cargarGalpones();
+      },
+      error: (err) => console.error('Error al crear galpón:', err),
+    });
   }
+}
 
   eliminarGalpon(id: number | undefined): void {
     if (id === undefined) return;
