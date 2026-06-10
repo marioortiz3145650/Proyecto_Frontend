@@ -19,12 +19,18 @@ export class LoteService {
     let httpParams = new HttpParams();
 
     if (params) {
-      if (params.page !== undefined) httpParams = httpParams.set('page', params.page.toString());
-      if (params.limit !== undefined) httpParams = httpParams.set('limit', params.limit.toString());
-      if (params.sortBy !== undefined) httpParams = httpParams.set('sortBy', params.sortBy);
-      if (params.order !== undefined) httpParams = httpParams.set('order', params.order);
-      if (params.edad_semanas !== undefined) httpParams = httpParams.set('edad_semanas', params.edad_semanas.toString());
-      if (params.raza_id !== undefined) httpParams = httpParams.set('raza_id', params.raza_id.toString());
+      Object.keys(params).forEach(key => {
+        const val = (params as any)[key];
+        if (
+          val !== undefined &&
+          val !== null &&
+          val !== '' &&
+          val !== 'null' &&
+          val !== 'undefined'
+        ) {
+          httpParams = httpParams.set(key, val.toString());
+        }
+      });
     }
 
     return this.http.get<PaginatedResponse<Lote>>(this.apiUrl, { params: httpParams });

@@ -41,6 +41,7 @@ export class ProduccionPage implements OnInit {
   Math = Math;
 
   mostrarModal = false;
+  produccionEditando: Produccion | null = null;
   produccionForm: {
     fecha: string;
     jumbo: number;
@@ -166,6 +167,8 @@ export class ProduccionPage implements OnInit {
   }
 
   abrirModalCrear(): void {
+    this.produccionEditando = null;
+    const adminUser = this.usuarios.find(u => u.nombre_usuario === 'admin' || u.nombre.toLowerCase().includes('admin'));
     this.produccionForm = {
       fecha: new Date().toISOString().substring(0, 10),
       jumbo: 0,
@@ -175,7 +178,26 @@ export class ProduccionPage implements OnInit {
       b: 0,
       c: 0,
       lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      creado_por: this.usuarios.length > 0 ? this.usuarios[0].id : undefined,
+      creado_por: adminUser ? adminUser.id : (this.usuarios.length > 0 ? this.usuarios[0].id : undefined),
+    };
+    this.mostrarModal = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirModalEditar(prod: Produccion): void {
+    this.produccionEditando = prod;
+    const rawDate = prod.fecha ? new Date(prod.fecha).toISOString().substring(0, 10) : '';
+
+    this.produccionForm = {
+      fecha: rawDate,
+      jumbo: prod.jumbo || 0,
+      aaa: prod.aaa || 0,
+      aa: prod.aa || 0,
+      a: prod.a || 0,
+      b: prod.b || 0,
+      c: prod.c || 0,
+      lote_id: prod.lote?.id_lote,
+      creado_por: prod.creado_por?.id,
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -214,16 +236,49 @@ export class ProduccionPage implements OnInit {
       creado_por: this.produccionForm.creado_por,
     };
 
-    this.produccionService.createProduccion(payload).subscribe({
-      next: () => {
-        this.cerrarModal();
-        this.loadProducciones();
-      },
-      error: () => {
-        this.error = 'Error al registrar producción';
-        this.cdr.detectChanges();
-      },
-    });
+    if (this.produccionEditando) {
+      this.produccionService.updateProduccion(this.produccionEditando.id_produccion, payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.loadProducciones();
+        },
+        error: (err) => {
+          console.error('Error al editar producción:', err);
+          const errorMsg = err.error?.message || 'Error al editar producción';
+          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.cdr.detectChanges();
+        },
+      });
+    } else {
+      this.produccionService.createProduccion(payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.loadProducciones();
+        },
+        error: (err) => {
+          console.error('Error al registrar producción:', err);
+          const errorMsg = err.error?.message || 'Error al registrar producción';
+          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.cdr.detectChanges();
+        },
+      });
+    }
+  }
+
+  eliminarProduccion(id: number): void {
+    if (confirm('¿Está seguro de que desea eliminar este registro de producción?')) {
+      this.produccionService.deleteProduccion(id).subscribe({
+        next: () => {
+          this.loadProducciones();
+        },
+        error: (err) => {
+          console.error('Error al eliminar producción:', err);
+          const errorMsg = err.error?.message || 'Error al eliminar producción';
+          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.cdr.detectChanges();
+        },
+      });
+    }
   }
 
   private generatePages(): void {

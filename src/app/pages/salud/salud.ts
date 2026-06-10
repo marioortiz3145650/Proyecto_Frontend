@@ -1,9 +1,11 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { MuerteService } from '../../services/muerte';
 import { LoteService } from '../../services/lote';
 import { UsersService } from '../../services/users';
+import { TratamientoService, Tratamiento } from '../../services/tratamiento';
 import { Muerte, FilterMuerteParams } from '../../interfaces/muerte.interface';
 import { Lote } from '../../interfaces/lote.interface';
 import { Usuario } from '../../interfaces/usuario.interface';
@@ -17,9 +19,15 @@ import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.in
   styleUrl: './salud.css',
 })
 export class Salud implements OnInit {
+  activeTab = 'muertes'; // 'muertes' o 'tratamientos'
+
+  // Datos
   muertes: Muerte[] = [];
+  tratamientos: Tratamiento[] = [];
   lotes: Lote[] = [];
   usuarios: Usuario[] = [];
+
+  // Paginación Muertes
   meta: PaginationMeta = {
     total: 0,
     page: 1,
@@ -28,57 +36,103 @@ export class Salud implements OnInit {
     hasNext: false,
     hasPrev: false,
   };
-
   page = 1;
   limit = 5;
   sortBy = 'fecha';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
-
   filtros: FilterMuerteParams = {};
   pages: number[] = [];
-  loading = false;
+
+  // Estados generales
+  loading = true; // Empieza en true para evitar ExpressionChangedAfterItHasBeenCheckedError
   error: string | null = null;
   Math = Math;
 
-  // Variables para CRUD Modal
-  mostrarModal = false;
+  // Modal Muertes
+  mostrarModalMuerte = false;
   muerteEditando: Muerte | null = null;
-  muerteForm: {
-    fecha: string;
-    cantidad: number;
-    causa: string;
-    loteId?: number;
-    usuarioId?: string;
-  } = {
+  muerteForm = {
     fecha: '',
-    cantidad: 0,
+    cantidad: 1,
     causa: '',
+    loteId: undefined as number | undefined,
+    usuarioId: undefined as string | undefined,
   };
+
+  // Modal Tratamientos
+  mostrarModalTratamiento = false;
+  tratamientoEditando: Tratamiento | null = null;
+  tratamientoForm = {
+    fecha: '',
+    tratamiento: '',
+    lote_id: undefined as number | undefined,
+    estado_id: 1,
+    creado_por: 1,
+  };
+
+  guardando = false;
 
   constructor(
     private muerteService: MuerteService,
     private loteService: LoteService,
     private usersService: UsersService,
+    private tratamientoService: TratamientoService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadLotes();
-    this.loadUsuarios();
-    this.loadMuertes();
+    this.loading = true;
+    this.error = null;
+
+    const muertesParams: PaginationParams & Partial<FilterMuerteParams> = {
+      page: this.page,
+      limit: this.limit,
+      sortBy: this.sortBy,
+      order: this.sortOrder,
+    };
+
+    forkJoin({
+      lotes: this.loteService.getLotes({ limit: 100 }),
+      usuarios: this.usersService.getUsers({ limit: 100 }),
+      muertes: this.muerteService.getMuertes(muertesParams),
+      tratamientos: this.tratamientoService.getTratamientos()
+    }).subscribe({
+      next: (res) => {
+        this.lotes = res.lotes.data || [];
+        this.usuarios = res.usuarios.data || [];
+        this.muertes = res.muertes.data || [];
+        this.meta = res.muertes.meta;
+        this.generatePages();
+        this.tratamientos = res.tratamientos || [];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al inicializar modulo de salud:', err);
+        this.error = 'Error al cargar información de salud';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
+  setTab(tab: string): void {
+    this.activeTab = tab;
+    this.error = null;
+  }
+
+  // --- CARGA DE CATÁLOGOS ---
   loadLotes(): void {
-  this.loteService.getLotes({ limit: 100 }).subscribe({
-    next: (response) => {
-      this.lotes = response.data;
-      setTimeout(() => this.cdr.detectChanges());
-    },
-    error: () => {
-      this.error = 'Error al cargar lotes';
-      setTimeout(() => this.cdr.detectChanges());
-    }
-  });
+    this.loteService.getLotes({ limit: 100 }).subscribe({
+      next: (response) => {
+        this.lotes = response.data;
+        setTimeout(() => this.cdr.detectChanges());
+      },
+      error: () => {
+        this.error = 'Error al cargar lotes';
+        setTimeout(() => this.cdr.detectChanges());
+      }
+    });
   }
 
   loadUsuarios(): void {
@@ -94,8 +148,7 @@ export class Salud implements OnInit {
     });
   }
 
-  guardando = false;
-
+  // --- CRUD MUERTES ---
   loadMuertes(): void {
     this.loading = true;
     this.error = null;
@@ -121,7 +174,7 @@ export class Salud implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        this.error = 'Error al cargar historial de salud';
+        this.error = 'Error al cargar historial de mortalidad';
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -160,7 +213,7 @@ export class Salud implements OnInit {
     this.loadMuertes();
   }
 
-  abrirModalCrear(): void {
+  abrirModalCrearMuerte(): void {
     this.muerteEditando = null;
     this.muerteForm = {
       fecha: new Date().toISOString().substring(0, 10),
@@ -169,11 +222,11 @@ export class Salud implements OnInit {
       loteId: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
       usuarioId: this.usuarios.length > 0 ? this.usuarios[0].id : undefined,
     };
-    this.mostrarModal = true;
+    this.mostrarModalMuerte = true;
     this.cdr.detectChanges();
   }
 
-  abrirModalEditar(muerte: Muerte): void {
+  abrirModalEditarMuerte(muerte: Muerte): void {
     this.muerteEditando = muerte;
     this.muerteForm = {
       fecha: muerte.fecha ? new Date(muerte.fecha).toISOString().substring(0, 10) : '',
@@ -182,12 +235,12 @@ export class Salud implements OnInit {
       loteId: muerte.lote?.id_lote,
       usuarioId: muerte.usuario?.id,
     };
-    this.mostrarModal = true;
+    this.mostrarModalMuerte = true;
     this.cdr.detectChanges();
   }
 
-  cerrarModal(): void {
-    this.mostrarModal = false;
+  cerrarModalMuerte(): void {
+    this.mostrarModalMuerte = false;
     this.guardando = false;
     this.cdr.detectChanges();
   }
@@ -208,19 +261,19 @@ export class Salud implements OnInit {
 
     if (this.muerteEditando) {
       this.muerteService.updateMuerte(this.muerteEditando.id_muerte, payload).subscribe({
-        next: () => { this.cerrarModal(); this.loadMuertes(); },
+        next: () => { this.cerrarModalMuerte(); this.loadMuertes(); },
         error: () => { this.error = 'Error al actualizar registro de muerte'; this.guardando = false; this.cdr.detectChanges(); },
       });
     } else {
       this.muerteService.createMuerte(payload).subscribe({
-        next: () => { this.cerrarModal(); this.loadMuertes(); },
+        next: () => { this.cerrarModalMuerte(); this.loadMuertes(); },
         error: () => { this.error = 'Error al registrar muerte'; this.guardando = false; this.cdr.detectChanges(); },
       });
     }
   }
 
   eliminarMuerte(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar este registro de salud/baja?')) {
+    if (confirm('¿Está seguro de que desea eliminar este registro de bajas?')) {
       this.muerteService.deleteMuerte(id).subscribe({
         next: () => {
           this.loadMuertes();
@@ -231,6 +284,108 @@ export class Salud implements OnInit {
         },
       });
     }
+  }
+
+  // --- CRUD TRATAMIENTOS ---
+  loadTratamientos(): void {
+    this.loading = true;
+    this.error = null;
+
+    this.tratamientoService.getTratamientos().subscribe({
+      next: (response) => {
+        this.tratamientos = response || [];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'Error al cargar tratamientos médicos';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  abrirModalCrearTratamiento(): void {
+    this.tratamientoEditando = null;
+    this.tratamientoForm = {
+      fecha: new Date().toISOString().substring(0, 10),
+      tratamiento: '',
+      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
+      estado_id: 1, // por defecto activo
+      creado_por: 1 // admin
+    };
+    this.mostrarModalTratamiento = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirModalEditarTratamiento(t: Tratamiento): void {
+    this.tratamientoEditando = t;
+    this.tratamientoForm = {
+      fecha: t.fecha ? new Date(t.fecha).toISOString().substring(0, 10) : '',
+      tratamiento: t.tratamiento,
+      lote_id: t.lote_id,
+      estado_id: t.estado_id || 1,
+      creado_por: t.creado_por || 1
+    };
+    this.mostrarModalTratamiento = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalTratamiento(): void {
+    this.mostrarModalTratamiento = false;
+    this.guardando = false;
+    this.cdr.detectChanges();
+  }
+
+  guardarTratamiento(): void {
+    if (this.guardando) return;
+    if (!this.tratamientoForm.lote_id) return;
+
+    this.guardando = true;
+
+    const payload = {
+      fecha: this.tratamientoForm.fecha,
+      tratamiento: this.tratamientoForm.tratamiento,
+      lote_id: Number(this.tratamientoForm.lote_id),
+      estado_id: Number(this.tratamientoForm.estado_id),
+      creado_por: Number(this.tratamientoForm.creado_por),
+    };
+
+    if (this.tratamientoEditando) {
+      this.tratamientoService.updateTratamiento(this.tratamientoEditando.id_tratamiento, payload).subscribe({
+        next: () => { this.cerrarModalTratamiento(); this.loadTratamientos(); },
+        error: () => { this.error = 'Error al actualizar tratamiento médico'; this.guardando = false; this.cdr.detectChanges(); },
+      });
+    } else {
+      this.tratamientoService.createTratamiento(payload).subscribe({
+        next: () => { this.cerrarModalTratamiento(); this.loadTratamientos(); },
+        error: () => { this.error = 'Error al registrar tratamiento médico'; this.guardando = false; this.cdr.detectChanges(); },
+      });
+    }
+  }
+
+  eliminarTratamiento(id: number): void {
+    if (confirm('¿Está seguro de que desea eliminar este tratamiento médico?')) {
+      this.tratamientoService.deleteTratamiento(id).subscribe({
+        next: () => {
+          this.loadTratamientos();
+        },
+        error: () => {
+          this.error = 'Error al eliminar tratamiento médico';
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  getLoteName(loteId: number): string {
+    const l = this.lotes.find(x => x.id_lote === loteId);
+    return l ? `Lote ${l.id_lote} (${l.raza?.nombre_raza || ''})` : `Lote ${loteId}`;
+  }
+
+  getRolName(rol: any): string {
+    if (!rol) return '';
+    return typeof rol === 'object' ? (rol.nombre || '') : rol;
   }
 
   private generatePages(): void {

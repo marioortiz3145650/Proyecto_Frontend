@@ -47,7 +47,6 @@
           <th>Cantidad Consumida</th>
           <th>Tipo Movimiento</th>
           <th>Registrado Por</th>
-          <th>Observaciones</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -59,12 +58,11 @@
           <td>{{ mov.alimento?.nombre || 'N/A' }}</td>
           <td>{{ mov.cantidad | number:'1.2-2' }}</td>
           <td>
-            <span class="badge" [class.active]="mov.tipo_movimiento === 'CONSUMO' || mov.tipo_movimiento === 'ENTRADA'" [class.warning-badge]="mov.tipo_movimiento === 'SALIDA'">
-              {{ mov.tipo_movimiento }}
+            <span class="badge" [class.active]="mov.tipo_movimiento === 'CONSUMO'" [class.warning-badge]="mov.tipo_movimiento === 'SALIDA'">
+              {{ mov.tipo_movimiento === 'SALIDA' ? 'AJUSTE / DESCARTE' : mov.tipo_movimiento }}
             </span>
           </td>
           <td>{{ mov.creado_por?.nombre || 'N/A' }}</td>
-          <td>{{ mov.observaciones || '-' }}</td>
           <td>
             <div class="action-buttons">
               <button class="btn btn-delete btn-sm" (click)="eliminarMovimiento(mov.id_movimiento)">
@@ -135,8 +133,7 @@
               <label for="formTipoMov">Tipo de Movimiento</label>
               <select id="formTipoMov" name="tipo_movimiento" [(ngModel)]="movimientoForm.tipo_movimiento" required>
                 <option value="CONSUMO">CONSUMO</option>
-                <option value="SALIDA">SALIDA</option>
-                <option value="ENTRADA">ENTRADA</option>
+                <option value="SALIDA">AJUSTE / DESCARTE</option>
               </select>
             </div>
           </div>
@@ -147,17 +144,6 @@
               <option [value]="undefined" disabled>Seleccione un usuario</option>
               <option *ngFor="let user of usuarios" [value]="user.id">{{ user.nombre }}</option>
             </select>
-          </div>
-
-          <div class="form-field">
-            <label for="formObservaciones">Observaciones</label>
-            <input
-              type="text"
-              id="formObservaciones"
-              name="observaciones"
-              [(ngModel)]="movimientoForm.observaciones"
-              placeholder="Ej. Consumo diario del galpón A"
-            />
           </div>
         </div>
         

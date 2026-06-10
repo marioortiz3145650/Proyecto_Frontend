@@ -4,6 +4,32 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.p-iconfield .p-inputicon {
+  color: #39A900 !important;
+}
+
+.p-password {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.p-password input.p-inputtext {
+  width: 100% !important;
+}
+
+.p-password .p-password-toggle-icon {
+  position: absolute !important;
+  right: 0.6rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  color: #39A900 !important;
+}
+
 :root {
   --bg:          #f4f1eb;
   --surface:     #ffffff;
@@ -35,4 +61,90 @@
 body {
   background: #f4f1eb;
   color: #1f1c17;
+}
+
+.p-password .p-password-toggle-icon {
+  position: absolute !important;
+  right: 0.6rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+}
+
+.p-password {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* PAGINACIÓN GLOBAL */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls .btn,
+.pagination-controls button,
+.pagination-controls .page-btn {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  padding: 0 !important;
+
+  border: 2px solid #d9d9d9 !important;
+  border-radius: 50% !important;
+
+  background: #fff !important;
+  color: #666 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  font-size: 16px !important;
+  font-weight: 600 !important;
+
+  transition: all .2s ease !important;
+}
+
+/* Hover */
+.pagination-controls .btn:hover:not(:disabled),
+.pagination-controls button:hover:not(:disabled),
+.pagination-controls .page-btn:hover:not(:disabled) {
+  border-color: #198754 !important;
+  color: #198754 !important;
+  background: #fff !important;
+  transform: none !important;
+}
+
+/* Página activa */
+.pagination-controls .btn.active,
+.pagination-controls button.active,
+.pagination-controls .page-btn.active {
+  background: #198754 !important;
+  border-color: #198754 !important;
+  color: #fff !important;
+}
+
+/* Hover de página activa */
+.pagination-controls .btn.active:hover,
+.pagination-controls button.active:hover,
+.pagination-controls .page-btn.active:hover {
+  background: #157347 !important;
+  border-color: #157347 !important;
+  color: #fff !important;
+}
+
+/* Deshabilitados */
+.pagination-controls .btn:disabled,
+.pagination-controls button:disabled,
+.pagination-controls .page-btn:disabled {
+  opacity: .5 !important;
+  cursor: not-allowed !important;
+  background: #fff !important;
+  color: #999 !important;
 }

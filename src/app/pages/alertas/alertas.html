@@ -126,7 +126,7 @@
             <div class="association-cell">
               <span *ngIf="alert.lote" class="ref-badge"><i class="pi pi-list"></i> Lote {{ alert.lote.id_lote }}</span>
               <span *ngIf="alert.galpon" class="ref-badge"><i class="pi pi-box"></i> Galpón {{ alert.galpon.nombre }}</span>
-              <span *ngIf="!alert.lote && !alert.galpon" class="muted-text">-</span>
+              <span *ngIf="!alert.lote && !alert.galpon" class="muted-text">ninguna</span>
             </div>
           </td>
           <td>
@@ -153,7 +153,7 @@
   <div class="pagination-container" *ngIf="!loading && !error && alertas.length > 0"> 
     <div class="pagination-controls">
       <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        Anterior
+        <i class="pi pi-angle-left"></i>
       </button>
       <button
         *ngFor="let p of pages"
@@ -164,7 +164,7 @@
         {{ p }}
       </button>
       <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        Siguiente
+        <i class="pi pi-angle-right"></i>
       </button>
     </div>
   </div>
@@ -227,7 +227,7 @@
             <div class="form-field">
               <label for="formLote">Lote Asociado (Opcional)</label>
               <select id="formLote" name="lote_id" [(ngModel)]="alertaForm.lote_id">
-                <option [ngValue]="undefined">Ninguno</option>
+                <option [ngValue]="undefined">ninguna</option>
                 <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }}</option>
               </select>
             </div>

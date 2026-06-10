@@ -1,1 +1,257 @@
-<div class="reportes-container"><h2>Reportes</h2></div>
+<div class="reportes-container">
+  <!-- Cabecera -->
+  <div class="header-section">
+    <div>
+      <h2>Reportes y Estadísticas</h2>
+      <p class="subtitle text-soft">Analiza la producción, consumo de insumos y mortalidad de tus lotes.</p>
+    </div>
+    <button class="btn btn-print" (click)="imprimirReporte()">
+      <i class="pi pi-print"></i> Imprimir Reporte
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Rango de Análisis</h3>
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label for="fechaInicio">Fecha Inicio</label>
+        <input type="date" id="fechaInicio" [(ngModel)]="filtros.fecha_inicio" (change)="calcularReporte()" />
+      </div>
+
+      <div class="filter-field">
+        <label for="fechaFin">Fecha Fin</label>
+        <input type="date" id="fechaFin" [(ngModel)]="filtros.fecha_fin" (change)="calcularReporte()" />
+      </div>
+
+      <div class="filter-field">
+        <label for="loteSelector">Filtrar por Lote</label>
+        <select id="loteSelector" [(ngModel)]="filtros.lote_id" (change)="calcularReporte()">
+          <option value="">Todos los Lotes</option>
+          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="tipoReporteSelector">Tipo de Reporte</label>
+        <select id="tipoReporteSelector" [(ngModel)]="filtros.tipo_reporte" (change)="calcularReporte()">
+          <option value="todo">Completo (Todo)</option>
+          <option value="produccion">Producción de Huevos</option>
+          <option value="alimentacion">Consumo de Alimento</option>
+          <option value="mortalidad">Mortalidad y Bajas</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="cargarDatos()">
+          <i class="pi pi-refresh"></i> Recargar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  <div class="loading" *ngIf="loading">
+    <i class="pi pi-spin pi-spinner mr-2"></i> Procesando datos históricos...
+  </div>
+
+  <!-- Mensaje de error -->
+  <div class="error" *ngIf="error && !loading">
+    {{ error }}
+  </div>
+
+  <!-- Contenido del Reporte -->
+  <div *ngIf="!loading && !error">
+    <!-- Tarjetas de Métricas -->
+    <div class="metrics-grid">
+      <div class="metric-card card-jumbo" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
+        <div class="metric-header">
+          <span class="metric-title text-soft">Total Huevos</span>
+          <i class="pi pi-chart-line metric-icon text-green"></i>
+        </div>
+        <div class="metric-value">{{ reporte.totalProduccion | number }}</div>
+        <div class="metric-footer text-green">Huevos recolectados</div>
+      </div>
+
+      <div class="metric-card card-aaa" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
+        <div class="metric-header">
+          <span class="metric-title text-soft">Promedio Diario</span>
+          <i class="pi pi-calendar-plus metric-icon text-blue"></i>
+        </div>
+        <div class="metric-value">{{ reporte.promedioDiario | number }}</div>
+        <div class="metric-footer text-blue">Huevos / día</div>
+      </div>
+
+      <div class="metric-card card-aa" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'alimentacion'">
+        <div class="metric-header">
+          <span class="metric-title text-soft">Consumo Alimento</span>
+          <i class="pi pi-shopping-cart metric-icon text-orange"></i>
+        </div>
+        <div class="metric-value">{{ reporte.totalConsumoAlimento | number }} <span class="unit">kg</span></div>
+        <div class="metric-footer text-orange">Alimento suministrado</div>
+      </div>
+
+      <div class="metric-card card-mortalidad" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'mortalidad'">
+        <div class="metric-header">
+          <span class="metric-title text-soft">Mortalidad</span>
+          <i class="pi pi-heart-fill metric-icon text-red"></i>
+        </div>
+        <div class="metric-value">{{ reporte.totalMuerte }}</div>
+        <div class="metric-footer text-red">Tasa de {{ reporte.tasaMortalidad }}%</div>
+      </div>
+    </div>
+
+    <!-- Secciones del Reporte -->
+    <div class="report-content-grid" [class.single-column]="filtros.tipo_reporte !== 'todo'">
+      <!-- Columna Izquierda: Producción -->
+      <div class="report-column" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
+        <!-- Distribución de Categorías -->
+        <div class="report-card">
+          <h3>Distribución por Categorías</h3>
+          <p class="card-subtitle text-soft">Participación de cada tamaño de huevo en la producción total.</p>
+          
+          <div class="category-list" *ngIf="reporte.totalProduccion > 0; else noProduccionMsg">
+            <div class="category-item">
+              <div class="category-info">
+                <strong>Jumbo</strong>
+                <span>{{ reporte.jumbo }} huevos ({{ reporte.porcentajeJumbo }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-jumbo" [style.width.%]="reporte.porcentajeJumbo"></div>
+              </div>
+            </div>
+
+            <div class="category-item">
+              <div class="category-info">
+                <strong>AAA</strong>
+                <span>{{ reporte.aaa }} huevos ({{ reporte.porcentajeAAA }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-aaa" [style.width.%]="reporte.porcentajeAAA"></div>
+              </div>
+            </div>
+
+            <div class="category-item">
+              <div class="category-info">
+                <strong>AA</strong>
+                <span>{{ reporte.aa }} huevos ({{ reporte.porcentajeAA }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-aa" [style.width.%]="reporte.porcentajeAA"></div>
+              </div>
+            </div>
+
+            <div class="category-item">
+              <div class="category-info">
+                <strong>A</strong>
+                <span>{{ reporte.a }} huevos ({{ reporte.porcentajeA }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-a" [style.width.%]="reporte.porcentajeA"></div>
+              </div>
+            </div>
+
+            <div class="category-item">
+              <div class="category-info">
+                <strong>B</strong>
+                <span>{{ reporte.b }} huevos ({{ reporte.porcentajeB }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-b" [style.width.%]="reporte.porcentajeB"></div>
+              </div>
+            </div>
+
+            <div class="category-item">
+              <div class="category-info">
+                <strong>C</strong>
+                <span>{{ reporte.c }} huevos ({{ reporte.porcentajeC }}%)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar bar-c" [style.width.%]="reporte.porcentajeC"></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noProduccionMsg>
+            <div class="empty-state">No hay registros de producción en el rango de fechas seleccionado.</div>
+          </ng-template>
+        </div>
+
+        <!-- Producción Diaria (Custom CSS Chart) -->
+        <div class="report-card">
+          <h3>Evolución de la Producción</h3>
+          <p class="card-subtitle text-soft">Huevos recolectados por día (últimos 10 días activos).</p>
+          
+          <div class="chart-wrapper" *ngIf="reporte.produccionPorDia.length > 0; else noChartMsg">
+            <div class="chart-container">
+              <div class="chart-bars">
+                <div class="chart-bar-column" *ngFor="let dia of reporte.produccionPorDia">
+                  <div class="chart-bar-value">{{ dia.total | number }}</div>
+                  <div class="chart-bar" [style.height.%]="dia.pct"></div>
+                  <div class="chart-bar-label">{{ dia.fecha }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noChartMsg>
+            <div class="empty-state">No hay suficientes registros históricos para trazar la gráfica.</div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Lotes y Pérdidas -->
+      <div class="report-column" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'alimentacion' || filtros.tipo_reporte === 'mortalidad'">
+        <!-- Tabla Resumen por Lotes -->
+        <div class="report-card">
+          <h3>Rendimiento de Lotes</h3>
+          <p class="card-subtitle text-soft">Comparativa de variables críticas por lote.</p>
+          
+          <div class="table-responsive">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Raza</th>
+                  <th>Gallinas</th>
+                  <th>Huevos</th>
+                  <th>Consumo</th>
+                  <th>Muertes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let rl of reporte.resumenLotes">
+                  <td><strong>Lote {{ rl.id_lote }}</strong></td>
+                  <td>{{ rl.raza }}</td>
+                  <td>{{ rl.gallinas | number }}</td>
+                  <td class="text-green font-semibold">{{ rl.produccion | number }}</td>
+                  <td>{{ rl.consumo | number }} kg</td>
+                  <td class="text-red">{{ rl.mortalidad }}</td>
+                </tr>
+                <tr *ngIf="reporte.resumenLotes.length === 0">
+                  <td colspan="6" class="text-center text-soft">No hay datos de lotes registrados.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Mortalidad por Causa -->
+        <div class="report-card" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'mortalidad'">
+          <h3>Mortalidad por Causa</h3>
+          <p class="card-subtitle text-soft">Distribución de bajas reportadas según la causa de muerte.</p>
+          
+          <div class="cause-list" *ngIf="reporte.mortalidadPorCausa.length > 0; else noMuerteMsg">
+            <div class="cause-item" *ngFor="let c of reporte.mortalidadPorCausa">
+              <div class="cause-info">
+                <span class="cause-name"><i class="pi pi-exclamation-triangle text-orange mr-2"></i>{{ c.causa }}</span>
+                <strong>{{ c.cantidad }} gallinas</strong>
+              </div>
+            </div>
+          </div>
+          <ng-template #noMuerteMsg>
+            <div class="empty-state"><i class="pi pi-heart text-green mr-2"></i>¡Excelente! No se registran bajas en este rango de fechas.</div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

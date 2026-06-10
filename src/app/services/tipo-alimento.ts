@@ -19,4 +19,12 @@ export class TipoAlimentoService {
   createTipoAlimento(tipo: { nombre: string }): Observable<TipoAlimento> {
     return this.http.post<TipoAlimento>(this.apiUrl, tipo);
   }
+
+  updateTipoAlimento(id: number, tipo: Partial<{ nombre: string }>): Observable<TipoAlimento> {
+    return this.http.patch<TipoAlimento>(`${this.apiUrl}/${id}`, tipo);
+  }
+
+  deleteTipoAlimento(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
 }

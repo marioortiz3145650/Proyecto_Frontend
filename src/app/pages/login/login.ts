@@ -1,44 +1,64 @@
-import { Component } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
-import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputTextModule, PasswordModule, ButtonModule],
-  template: `
-    <div>
-      <h2 class="text-2xl font-bold text-center mb-6">Iniciar Sesión</h2>
-      <form (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Usuario</label>
-          <input pInputText type="text" [(ngModel)]="username" name="username" 
-                 class="w-full" placeholder="Ingrese su usuario" required />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Contraseña</label>
-          <p-password [(ngModel)]="password" [feedback]="false" 
-                      name="password" placeholder="Ingrese su contraseña" 
-                      class="w-full" [toggleMask]="true" required />
-        </div>
-        <button pButton type="submit" label="Ingresar" 
-                class="w-full" [loading]="loading"></button>
-      </form>
-    </div>
-  `,
-  styles: []
+  imports: [
+    CommonModule,
+    FormsModule,
+    InputTextModule,
+    MessageModule,
+    IconFieldModule,
+    InputIconModule,
+  ],
+  templateUrl: './login.html',
+  styleUrl: './login.css'
 })
-export class LoginPage {
+export class LoginComponent {
   username = '';
   password = '';
   loading = false;
+  errorMsg = '';
+  showPassword = false;
+
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   onSubmit(): void {
+    if (this.loading) return;
+    if (!this.username.trim() || !this.password) {
+      this.errorMsg = 'Completa usuario y contraseña.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.loading = true;
-    // TODO: Implementar autenticación
-    setTimeout(() => this.loading = false, 1000);
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+
+    this.auth.login(this.username.trim(), this.password).subscribe({
+      next: (res) => {
+        localStorage.setItem('access_token', res.access_token);
+        this.loading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.password = '';
+        this.errorMsg = err.status === 401
+          ? 'Credenciales incorrectas.'
+          : 'Error de conexión. Intenta de nuevo.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

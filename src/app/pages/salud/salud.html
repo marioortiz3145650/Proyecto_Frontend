@@ -1,186 +1,251 @@
 <div class="salud-container">
+  <!-- Cabecera -->
   <div class="header-section">
-    <h2>Historial de Salud (Bajas / Muertes)</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
-      <i class="pi pi-plus mr-2"></i>Registrar Muerte
+    <div>
+      <h2>Salud y Control Veterinario</h2>
+      <p class="subtitle text-soft">Monitorea la mortalidad y los tratamientos médicos de tus lotes.</p>
+    </div>
+  </div>
+
+  <!-- Pestañas de Navegación -->
+  <div class="tabs-container">
+    <button (click)="setTab('muertes')" [class.active]="activeTab === 'muertes'" class="tab-link">
+      <i class="pi pi-heart-fill"></i> Control de Bajas (Mortalidad)
+    </button>
+    <button (click)="setTab('tratamientos')" [class.active]="activeTab === 'tratamientos'" class="tab-link">
+      <i class="pi pi-shield"></i> Tratamientos Médicos
     </button>
   </div>
 
-  <!-- Filtros -->
-  <div class="filters-card">
-    <h3>Filtros</h3>
-    <div class="filters-grid">
-      <div class="filter-field">
-        <label for="filtroLote">Lote</label>
-        <select id="filtroLote" [(ngModel)]="filtros.lote" (change)="applyFilters()">
-          <option [ngValue]="undefined">Todos</option>
-          <option *ngFor="let lote of lotes" [ngValue]="lote.id_lote">Lote {{ lote.id_lote }}</option>
-        </select>
+  <!-- Mensajes de Error y Carga -->
+  <div class="loading" *ngIf="loading">
+    <i class="pi pi-spin pi-spinner mr-2"></i> Cargando información...
+  </div>
+  <div class="error" *ngIf="error && !loading">
+    {{ error }}
+  </div>
+
+  <!-- SECCIÓN 1: MORTALIDAD (MUERTES) -->
+  <div *ngIf="activeTab === 'muertes' && !loading">
+    <div class="action-bar">
+      <!-- Filtros -->
+      <div class="filters-inline">
+        <div class="filter-item">
+          <label>Lote:</label>
+          <select [(ngModel)]="filtros.lote" (change)="applyFilters()">
+            <option [ngValue]="undefined">Todos</option>
+            <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }}</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Fecha:</label>
+          <input type="date" [(ngModel)]="filtros.fecha" (change)="applyFilters()" />
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="clearFilters()">
+          <i class="pi pi-filter-slash"></i> Limpiar
+        </button>
       </div>
 
-      <div class="filter-field">
-        <label for="filtroFecha">Fecha</label>
-        <input
-          type="date"
-          id="filtroFecha"
-          [(ngModel)]="filtros.fecha"
-          (change)="applyFilters()"
-        />
-      </div>
+      <button class="btn btn-primary" (click)="abrirModalCrearMuerte()">
+        <i class="pi pi-plus"></i> Registrar Baja
+      </button>
+    </div>
 
-      <div class="filter-field">
-        <label for="filtroCausa">Causa</label>
-        <input
-          type="text"
-          id="filtroCausa"
-          [(ngModel)]="filtros.causa"
-          placeholder="Buscar por causa..."
-          (keyup.enter)="applyFilters()"
-        />
-      </div>
+    <!-- Tabla Bajas -->
+    <div class="table-responsive card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sortByField('fecha')">Fecha <i class="pi pi-sort"></i></th>
+            <th>Lote</th>
+            <th (click)="sortByField('cantidad')">Cantidad <i class="pi pi-sort"></i></th>
+            <th>Causa de Muerte</th>
+            <th>Registrado por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of muertes">
+            <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+            <td><strong>Lote {{ m.lote?.id_lote }}</strong> ({{ m.lote?.raza?.nombre_raza }})</td>
+            <td class="text-red font-semibold">{{ m.cantidad }} aves</td>
+            <td>{{ m.causa }}</td>
+            <td>{{ m.usuario?.nombre || 'Admin' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-icon btn-edit" (click)="abrirModalEditarMuerte(m)" title="Editar">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button class="btn-icon btn-delete" (click)="eliminarMuerte(m.id_muerte)" title="Eliminar">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="muertes.length === 0">
+            <td colspan="6" class="text-center text-soft py-4">No se encontraron registros de mortalidad.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-      <div class="filter-field">
-        <label for="limitSelect">Items por página</label>
-        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
-          <option [ngValue]="5">5</option>
-          <option [ngValue]="10">10</option>
-          <option [ngValue]="25">25</option>
-        </select>
+    <!-- Paginación -->
+    <div class="pagination-container" *ngIf="meta.totalPages > 1">
+      <div class="pagination-info">
+        Mostrando página {{ meta.page }} de {{ meta.totalPages }} (Total: {{ meta.total }} registros)
       </div>
-
-      <div class="filter-actions">
-        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
-        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      <div class="pagination-controls">
+        <button [disabled]="!meta.hasPrev" (click)="changePage(page - 1)" class="page-btn">
+          <i class="pi pi-angle-left"></i>
+        </button>
+        <button *ngFor="let p of pages" (click)="changePage(p)" [class.active]="p === page" class="page-btn">
+          {{ p }}
+        </button>
+        <button [disabled]="!meta.hasNext" (click)="changePage(page + 1)" class="page-btn">
+          <i class="pi pi-angle-right"></i>
+        </button>
       </div>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">Cargando registros de salud...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+  <!-- SECCIÓN 2: TRATAMIENTOS MÉDICOS -->
+  <div *ngIf="activeTab === 'tratamientos' && !loading">
+    <div class="action-bar">
+      <div></div>
+      <button class="btn btn-primary" (click)="abrirModalCrearTratamiento()">
+        <i class="pi pi-plus"></i> Registrar Tratamiento
+      </button>
+    </div>
 
-  <!-- Tabla de resultados -->
-  <div class="table-container" *ngIf="!loading && !error">
-    <table class="table">
-      <thead>
-        <tr>
-          <th (click)="sortByField('id_muerte')" style="cursor: pointer">
-            ID
-            <span *ngIf="sortBy === 'id_muerte'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
-          </th>
-          <th (click)="sortByField('fecha')" style="cursor: pointer">
-            Fecha
-            <span *ngIf="sortBy === 'fecha'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
-          </th>
-          <th>Lote</th>
-          <th (click)="sortByField('cantidad')" style="cursor: pointer">
-            Cantidad (Aves)
-            <span *ngIf="sortBy === 'cantidad'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
-          </th>
-          <th>Causa</th>
-          <th>Registrado Por</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of muertes">
-          <td>{{ m.id_muerte }}</td>
-          <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-          <td><strong>Lote {{ m.lote?.id_lote }}</strong></td>
-          <td>
-            <span class="badge warning-badge">{{ m.cantidad }} aves</span>
-          </td>
-          <td>{{ m.causa }}</td>
-          <td>{{ m.usuario?.nombre || m.usuario?.nombre_usuario || 'N/A' }}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(m)">
-                <i class="pi pi-pencil"></i> Editar
-              </button>
-              <button class="btn btn-delete btn-sm" (click)="eliminarMuerte(m.id_muerte)">
-                <i class="pi pi-trash"></i> Borrar
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div *ngIf="muertes.length === 0" class="empty">
-      No se han registrado bajas en el historial.
+    <!-- Tabla Tratamientos -->
+    <div class="table-responsive card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Lote</th>
+            <th>Tratamiento / Medicamento</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tratamientos">
+            <td>{{ t.fecha | date:'dd/MM/yyyy' }}</td>
+            <td><strong>{{ getLoteName(t.lote_id) }}</strong></td>
+            <td>{{ t.tratamiento }}</td>
+            <td>
+              <span class="status-badge" [class.badge-active]="t.estado_id === 1" [class.badge-inactive]="t.estado_id !== 1">
+                {{ t.estado_id === 1 ? 'Activo' : 'Completado' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-icon btn-edit" (click)="abrirModalEditarTratamiento(t)" title="Editar">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button class="btn-icon btn-delete" (click)="eliminarTratamiento(t.id_tratamiento)" title="Eliminar">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="tratamientos.length === 0">
+            <td colspan="5" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Paginación -->
-  <div class="pagination-container" *ngIf="!loading && !error && muertes.length > 0">
-    <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">Anterior</button>
-      <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="changePage(p)">{{ p }}</button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">Siguiente</button>
-    </div>
-  </div>
-
-  <!-- Modal overlay de Registro de Muerte -->
-  <div class="modal-overlay" *ngIf="mostrarModal">
+  <!-- MODAL: REGISTRAR/EDITAR MUERTE -->
+  <div class="modal-backdrop" *ngIf="mostrarModalMuerte">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>{{ muerteEditando ? 'Editar Registro de Muerte' : 'Registrar Muerte (Baja)' }}</h3>
-        <button class="close-btn" (click)="cerrarModal()">&times;</button>
+        <h3>{{ muerteEditando ? 'Editar Registro de Baja' : 'Registrar Baja (Muerte)' }}</h3>
+        <button class="close-btn" (click)="cerrarModalMuerte()">&times;</button>
       </div>
-      <form (ngSubmit)="guardarMuerte()" #muerteFormRef="ngForm">
-        <div class="modal-body">
+      <form (ngSubmit)="guardarMuerte()" class="modal-form">
+        <div class="form-grid">
           <div class="form-field">
-            <label for="formFecha">Fecha de Ocurrencia</label>
-            <input
-              type="date"
-              id="formFecha"
-              name="fecha"
-              [(ngModel)]="muerteForm.fecha"
-              required
-            />
+            <label for="mFecha">Fecha *</label>
+            <input type="date" id="mFecha" [(ngModel)]="muerteForm.fecha" name="fecha" required />
           </div>
 
           <div class="form-field">
-            <label for="formLote">Lote Afectado</label>
-            <select id="formLote" name="loteId" [(ngModel)]="muerteForm.loteId" required>
-              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+            <label for="mLote">Lote Afectado *</label>
+            <select id="mLote" [(ngModel)]="muerteForm.loteId" name="loteId" required>
+              <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
             </select>
           </div>
 
           <div class="form-field">
-            <label for="formUsuario">Registrado Por</label>
-            <select id="formUsuario" name="usuarioId" [(ngModel)]="muerteForm.usuarioId" required>
-              <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }} ({{ u.nombre_usuario }})</option>
+            <label for="mCantidad">Cantidad de Aves *</label>
+            <input type="number" id="mCantidad" [(ngModel)]="muerteForm.cantidad" name="cantidad" min="1" required />
+          </div>
+
+          <div class="form-field">
+            <label for="mUsuario">Registrado Por *</label>
+            <select id="mUsuario" [(ngModel)]="muerteForm.usuarioId" name="usuarioId" required>
+              <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }} ({{ getRolName(u.rol) }})</option>
             </select>
           </div>
 
-          <div class="form-field">
-            <label for="formCantidad">Cantidad de Aves</label>
-            <input
-              type="number"
-              id="formCantidad"
-              name="cantidad"
-              [(ngModel)]="muerteForm.cantidad"
-              required
-              min="1"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="formCausa">Causa / Observación</label>
-            <input
-              type="text"
-              id="formCausa"
-              name="causa"
-              [(ngModel)]="muerteForm.causa"
-              required
-              placeholder="Ej. Calor extremo, infección respiratoria"
-            />
+          <div class="form-field full-width">
+            <label for="mCausa">Causa de la Baja *</label>
+            <input type="text" id="mCausa" [(ngModel)]="muerteForm.causa" name="causa" placeholder="Ej: Calor extremo, Infección, Edad" required />
           </div>
         </div>
+
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="!muerteFormRef.form.valid">
-            Guardar
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalMuerte()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
+            <i class="pi pi-check"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR/EDITAR TRATAMIENTO -->
+  <div class="modal-backdrop" *ngIf="mostrarModalTratamiento">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ tratamientoEditando ? 'Editar Tratamiento Médico' : 'Registrar Tratamiento Médico' }}</h3>
+        <button class="close-btn" (click)="cerrarModalTratamiento()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarTratamiento()" class="modal-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="tFecha">Fecha de Inicio *</label>
+            <input type="date" id="tFecha" [(ngModel)]="tratamientoForm.fecha" name="fecha" required />
+          </div>
+
+          <div class="form-field">
+            <label for="tLote">Lote Destino *</label>
+            <select id="tLote" [(ngModel)]="tratamientoForm.lote_id" name="lote_id" required>
+              <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="tEstado">Estado del Tratamiento</label>
+            <select id="tEstado" [(ngModel)]="tratamientoForm.estado_id" name="estado_id">
+              <option [ngValue]="1">Activo / En Curso</option>
+              <option [ngValue]="2">Completado</option>
+            </select>
+          </div>
+
+          <div class="form-field full-width">
+            <label for="tMedicamento">Tratamiento / Medicamento Aplicado *</label>
+            <input type="text" id="tMedicamento" [(ngModel)]="tratamientoForm.tratamiento" name="tratamiento" placeholder="Ej: Complejo B en el agua, Vacuna Triple Aviar" required />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalTratamiento()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
+            <i class="pi pi-check"></i> Guardar
           </button>
         </div>
       </form>

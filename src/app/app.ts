@@ -1,12 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [ButtonModule, CardModule, AdminLayoutComponent],
-  template: `<app-admin-layout></app-admin-layout>`,
+  imports: [RouterOutlet],
+  template: `<router-outlet></router-outlet>`,
   styleUrl: './app.css'
 })
 export class App {
