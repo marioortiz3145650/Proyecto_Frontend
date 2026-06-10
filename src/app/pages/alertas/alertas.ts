@@ -27,7 +27,7 @@ export class Alertas implements OnInit {
   };
   page = 1;
   limit = 5;
-  sortBy = 'fecha_creacion';
+  sortBy = 'id_alerta';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
   pages: number[] = [];
 
@@ -96,9 +96,23 @@ export class Alertas implements OnInit {
     }
 
     this.alertaService.getAlertas(params).subscribe({
-      next: (response) => {
-        this.alertas = response.data;
-        this.meta = response.meta;
+      next: (response: any) => {
+        if (response && response.data) {
+          this.alertas = response.data;
+          this.meta = response.meta;
+        } else if (Array.isArray(response)) {
+          this.alertas = response;
+          this.meta = {
+            total: response.length,
+            page: 1,
+            limit: response.length || 5,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+          };
+        } else {
+          this.alertas = [];
+        }
         this.generatePages();
         this.loading = false;
         this.cdr.detectChanges();

@@ -48,6 +48,12 @@
         class="tab-btn">
         <i class="pi pi-percentage"></i> Unidades de Medida
       </button>
+      <button 
+        (click)="setTab('razas')"
+        [class.active]="activeTab === 'razas'" 
+        class="tab-btn">
+        <i class="pi pi-book"></i> Catálogo de Razas
+      </button>
     </div>
 
     <!-- Form/Content Area -->
@@ -254,6 +260,62 @@
         </div>
       </div>
 
+      <!-- Tab 6: Razas CRUD -->
+      <div *ngIf="activeTab === 'razas'" class="settings-card">
+        <div class="card-header-action">
+          <div>
+            <h3>Catálogo de Razas de Gallinas</h3>
+            <p class="card-subtitle text-soft">Administra las razas de gallinas ponedoras en tu granja.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="abrirModalCrearRaza()">
+            <i class="pi pi-plus"></i> Nueva Raza
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="catalog-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre de la Raza</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of razas">
+                <td>#{{ r.id_raza }}</td>
+                <td><strong>{{ r.nombre_raza }}</strong></td>
+                <td>
+                  <div class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      [id]="'toggle-raza-' + r.id_raza"
+                      [checked]="r.activo"
+                      (change)="toggleRazaStatus(r)"
+                    />
+                    <label [for]="'toggle-raza-' + r.id_raza" class="toggle-slider"></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn-icon btn-edit" (click)="abrirModalEditarRaza(r)" title="Editar">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button class="btn-icon btn-delete" (click)="eliminarRaza(r.id_raza)" title="Eliminar">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="razas.length === 0">
+                <td colspan="4" class="text-center text-soft py-4">No hay razas registradas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -300,6 +362,37 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModalUnidad()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
+            <i class="pi pi-check"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR/EDITAR RAZA -->
+  <div class="modal-backdrop" *ngIf="mostrarModalRaza">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ razaEditando ? 'Editar Raza' : 'Nueva Raza' }}</h3>
+        <button class="close-btn" (click)="cerrarModalRaza()">&times;</button>
+      </div>
+      <form (ngSubmit)="guardarRaza()" class="modal-form">
+        <div class="form-field mb-3">
+          <label for="razaNombre">Nombre de la Raza *</label>
+          <input type="text" id="razaNombre" [(ngModel)]="razaForm.nombre_raza" name="nombre_raza" placeholder="Ej: Hy-Line Brown, Lohmann Brown" required />
+        </div>
+
+        <div class="form-field mb-3">
+          <label for="razaActivo">Estado Activo</label>
+          <select id="razaActivo" [(ngModel)]="razaForm.activo" name="activo">
+            <option [ngValue]="true">Activo</option>
+            <option [ngValue]="false">Inactivo</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModalRaza()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="guardando">
             <i class="pi pi-check"></i> Guardar
           </button>

@@ -31,6 +31,16 @@
           <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
         </select>
       </div>
+
+      <div class="filter-field">
+        <label for="tipoReporteSelector">Tipo de Reporte</label>
+        <select id="tipoReporteSelector" [(ngModel)]="filtros.tipo_reporte" (change)="calcularReporte()">
+          <option value="todo">Completo (Todo)</option>
+          <option value="produccion">Producción de Huevos</option>
+          <option value="alimentacion">Consumo de Alimento</option>
+          <option value="mortalidad">Mortalidad y Bajas</option>
+        </select>
+      </div>
       
       <div class="filter-actions">
         <button class="btn btn-primary" (click)="cargarDatos()">
@@ -54,7 +64,7 @@
   <div *ngIf="!loading && !error">
     <!-- Tarjetas de Métricas -->
     <div class="metrics-grid">
-      <div class="metric-card card-jumbo">
+      <div class="metric-card card-jumbo" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
         <div class="metric-header">
           <span class="metric-title text-soft">Total Huevos</span>
           <i class="pi pi-chart-line metric-icon text-green"></i>
@@ -63,7 +73,7 @@
         <div class="metric-footer text-green">Huevos recolectados</div>
       </div>
 
-      <div class="metric-card card-aaa">
+      <div class="metric-card card-aaa" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
         <div class="metric-header">
           <span class="metric-title text-soft">Promedio Diario</span>
           <i class="pi pi-calendar-plus metric-icon text-blue"></i>
@@ -72,7 +82,7 @@
         <div class="metric-footer text-blue">Huevos / día</div>
       </div>
 
-      <div class="metric-card card-aa">
+      <div class="metric-card card-aa" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'alimentacion'">
         <div class="metric-header">
           <span class="metric-title text-soft">Consumo Alimento</span>
           <i class="pi pi-shopping-cart metric-icon text-orange"></i>
@@ -81,7 +91,7 @@
         <div class="metric-footer text-orange">Alimento suministrado</div>
       </div>
 
-      <div class="metric-card card-mortalidad">
+      <div class="metric-card card-mortalidad" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'mortalidad'">
         <div class="metric-header">
           <span class="metric-title text-soft">Mortalidad</span>
           <i class="pi pi-heart-fill metric-icon text-red"></i>
@@ -92,9 +102,9 @@
     </div>
 
     <!-- Secciones del Reporte -->
-    <div class="report-content-grid">
+    <div class="report-content-grid" [class.single-column]="filtros.tipo_reporte !== 'todo'">
       <!-- Columna Izquierda: Producción -->
-      <div class="report-column">
+      <div class="report-column" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'produccion'">
         <!-- Distribución de Categorías -->
         <div class="report-card">
           <h3>Distribución por Categorías</h3>
@@ -189,7 +199,7 @@
       </div>
 
       <!-- Columna Derecha: Lotes y Pérdidas -->
-      <div class="report-column">
+      <div class="report-column" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'alimentacion' || filtros.tipo_reporte === 'mortalidad'">
         <!-- Tabla Resumen por Lotes -->
         <div class="report-card">
           <h3>Rendimiento de Lotes</h3>
@@ -225,7 +235,7 @@
         </div>
 
         <!-- Mortalidad por Causa -->
-        <div class="report-card">
+        <div class="report-card" *ngIf="filtros.tipo_reporte === 'todo' || filtros.tipo_reporte === 'mortalidad'">
           <h3>Mortalidad por Causa</h3>
           <p class="card-subtitle text-soft">Distribución de bajas reportadas según la causa de muerte.</p>
           

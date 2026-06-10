@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { MuerteService } from '../../services/muerte';
 import { LoteService } from '../../services/lote';
 import { UsersService } from '../../services/users';
@@ -43,7 +44,7 @@ export class Salud implements OnInit {
   pages: number[] = [];
 
   // Estados generales
-  loading = false;
+  loading = true; // Empieza en true para evitar ExpressionChangedAfterItHasBeenCheckedError
   error: string | null = null;
   Math = Math;
 
@@ -80,10 +81,39 @@ export class Salud implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadLotes();
-    this.loadUsuarios();
-    this.loadMuertes();
-    this.loadTratamientos();
+    this.loading = true;
+    this.error = null;
+
+    const muertesParams: PaginationParams & Partial<FilterMuerteParams> = {
+      page: this.page,
+      limit: this.limit,
+      sortBy: this.sortBy,
+      order: this.sortOrder,
+    };
+
+    forkJoin({
+      lotes: this.loteService.getLotes({ limit: 100 }),
+      usuarios: this.usersService.getUsers({ limit: 100 }),
+      muertes: this.muerteService.getMuertes(muertesParams),
+      tratamientos: this.tratamientoService.getTratamientos()
+    }).subscribe({
+      next: (res) => {
+        this.lotes = res.lotes.data || [];
+        this.usuarios = res.usuarios.data || [];
+        this.muertes = res.muertes.data || [];
+        this.meta = res.muertes.meta;
+        this.generatePages();
+        this.tratamientos = res.tratamientos || [];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al inicializar modulo de salud:', err);
+        this.error = 'Error al cargar información de salud';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   setTab(tab: string): void {

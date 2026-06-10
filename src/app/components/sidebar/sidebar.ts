@@ -73,8 +73,7 @@ export class SidebarComponent {
       icon: 'pi pi-box',
       children: [
         { label: 'Lotes', icon: 'pi pi-list', route: '/gallinas/lotes' },
-        { label: 'Galpones', icon: 'pi pi-box', route: '/gallinas/galpones' },
-        { label: 'Razas', icon: 'pi pi-book', route: '/gallinas/razas' }
+        { label: 'Galpones', icon: 'pi pi-box', route: '/gallinas/galpones' }
       ]
     },
     { label: 'Producción', icon: 'pi pi-chart-line', route: '/produccion' },

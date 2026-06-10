@@ -1,0 +1,163 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image:
+    linear-gradient(rgba(0, 80, 30, 0.55), rgba(0, 0, 0, 0.65)),
+    url('../../../assets/Yamboro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: sans-serif;
+  padding: 1rem;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(57, 169, 0, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 400px;
+  padding: 2.5rem 2rem;
+  color: #fff;
+}
+
+.login-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(57, 169, 0, 0.3);
+  border: 2px solid #39A900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.login-title {
+  text-align: center;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  margin: 0 0 2rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(180, 30, 30, 0.35);
+  border: 1px solid rgba(255, 120, 120, 0.5);
+  border-radius: 8px;
+  color: #ffcccc;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  padding: 0.65rem 0.75rem;
+}
+
+.error-close {
+  margin-left: auto;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+::ng-deep .login-form p-iconfield .p-iconfield {
+  position: relative;
+}
+
+::ng-deep .login-form p-iconfield .p-inputicon:last-child {
+  cursor: pointer !important;
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+::ng-deep .login-form p-iconfield .p-inputicon {
+  color: #39A900 !important;
+}
+
+::ng-deep .login-form p-iconfield .p-inputicon:last-child {
+  cursor: pointer !important;
+}
+
+::ng-deep .login-form .p-inputtext {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1.5px solid rgba(57, 169, 0, 0.6) !important;
+  border-radius: 0 !important;
+  color: #fff !important;
+  padding: 0.6rem 0.75rem 0.6rem 2.2rem !important;
+  font-size: 0.95rem !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+
+::ng-deep .login-form .p-inputtext::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+::ng-deep .login-form .p-inputtext:enabled:focus {
+  border-bottom-color: #39A900 !important;
+  box-shadow: none !important;
+}
+
+::ng-deep .login-form .p-inputtext:-webkit-autofill,
+::ng-deep .login-form .p-inputtext:-webkit-autofill:hover,
+::ng-deep .login-form .p-inputtext:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+.login-btn {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #007832, #39A900) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0.08em !important;
+  border-radius: 8px !important;
+  padding: 0.85rem !important;
+  transition: opacity 0.2s !important;
+}
+
+.login-btn:hover:not(:disabled) {
+  opacity: 0.88 !important;
+}

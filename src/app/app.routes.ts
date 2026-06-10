@@ -1,4 +1,8 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth.guard';
+import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
+import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout';
+import { LoginComponent } from './pages/login/login';
 import { UsuariosComponent } from './components/usuarios/usuarios';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { Lotes } from './pages/gallinas/lotes/lotes';
@@ -13,18 +17,32 @@ import { Reportes } from './pages/reportes/reportes';
 import { Configuracion } from './pages/configuracion/configuracion';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: Dashboard },
-  { path: 'usuarios', component: UsuariosComponent },
-  { path: 'gallinas/lotes', component: Lotes },
-  { path: 'gallinas/galpones', component: Galpones },
-  { path: 'gallinas/razas', component: Razas },
-  { path: 'produccion', component: ProduccionPage },
-  { path: 'alimentacion/alimentos', component: Alimentos },
-  { path: 'alimentacion/consumo', component: Consumo },
-  { path: 'salud', component: Salud },
-  { path: 'alertas', component: Alertas },
-  { path: 'reportes', component: Reportes },
-  { path: 'configuracion', component: Configuracion },
-  { path: '**', redirectTo: '/dashboard' }
+  {
+    path: 'login',
+    component: AuthLayoutComponent,
+    children: [
+      { path: '', component: LoginComponent }
+    ]
+  },
+  {
+    path: '',
+    component: AdminLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: Dashboard },
+      { path: 'usuarios', component: UsuariosComponent },
+      { path: 'gallinas/lotes', component: Lotes },
+      { path: 'gallinas/galpones', component: Galpones },
+      { path: 'gallinas/razas', component: Razas },
+      { path: 'produccion', component: ProduccionPage },
+      { path: 'alimentacion/alimentos', component: Alimentos },
+      { path: 'alimentacion/consumo', component: Consumo },
+      { path: 'salud', component: Salud },
+      { path: 'alertas', component: Alertas },
+      { path: 'reportes', component: Reportes },
+      { path: 'configuracion', component: Configuracion },
+    ]
+  },
+  { path: '**', redirectTo: '/login' }
 ];

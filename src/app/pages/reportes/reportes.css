@@ -199,6 +199,10 @@
   gap: 20px;
 }
 
+.report-content-grid.single-column {
+  grid-template-columns: 1fr;
+}
+
 .report-column {
   display: flex;
   flex-direction: column;

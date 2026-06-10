@@ -112,7 +112,7 @@
   <div class="pagination-container" *ngIf="!loading && !error && alimentos.length > 0"> 
     <div class="pagination-controls">
       <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        Anterior
+        <i class="pi pi-angle-left"></i>
       </button>
       <button
         *ngFor="let p of pages"
@@ -123,7 +123,7 @@
         {{ p }}
       </button>
       <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        Siguiente
+        <i class="pi pi-angle-right"></i>
       </button>
     </div>
   </div>

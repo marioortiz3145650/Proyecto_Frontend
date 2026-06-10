@@ -30,7 +30,8 @@ export class Reportes implements OnInit {
   filtros = {
     fecha_inicio: '',
     fecha_fin: '',
-    lote_id: '' as string | number
+    lote_id: '' as string | number,
+    tipo_reporte: 'todo'
   };
 
   // Resultados calculados

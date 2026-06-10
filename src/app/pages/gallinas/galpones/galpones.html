@@ -106,9 +106,13 @@
   <!-- Paginación -->
   <div class="pagination-container" *ngIf="!loading && !error && galpones.length > 0">
     <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="cambiarPagina(page - 1)">Anterior</button>
+      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="cambiarPagina(page - 1)">
+        <i class="pi pi-angle-left"></i>
+      </button>
       <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="cambiarPagina(p)">{{ p }}</button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="cambiarPagina(page + 1)">Siguiente</button>
+      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="cambiarPagina(page + 1)">
+        <i class="pi pi-angle-right"></i>
+      </button>
     </div>
   </div>
 
