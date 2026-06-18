@@ -2,7 +2,7 @@
   <div class="header-section">
     <div>
       <h2>Configuración del Sistema</h2>
-      <p class="subtitle text-soft">Personaliza los parámetros del sistema, umbrales de alerta y detalles de tu granja.</p>
+      <p class="subtitle text-soft">Administra los umbrales de alerta y catálogos del sistema.</p>
     </div>
   </div>
 
@@ -19,22 +19,10 @@
     <!-- Tabs Nav -->
     <div class="tabs-nav">
       <button 
-        (click)="setTab('general')"
-        [class.active]="activeTab === 'general'" 
-        class="tab-btn">
-        <i class="pi pi-info-circle"></i> Información General
-      </button>
-      <button 
         (click)="setTab('alertas')"
         [class.active]="activeTab === 'alertas'" 
         class="tab-btn">
         <i class="pi pi-bell"></i> Alertas y Umbrales
-      </button>
-      <button 
-        (click)="setTab('preferencias')"
-        [class.active]="activeTab === 'preferencias'" 
-        class="tab-btn">
-        <i class="pi pi-cog"></i> Preferencias
       </button>
       <button 
         (click)="setTab('tipos-alimento')"
@@ -58,41 +46,7 @@
 
     <!-- Form/Content Area -->
     <div class="settings-content">
-      
-      <!-- Tab 1: General Info -->
-      <form *ngIf="activeTab === 'general'" (ngSubmit)="saveSettings()" class="settings-form">
-        <div class="settings-card">
-          <h3>Información General de la Granja</h3>
-          <p class="card-subtitle text-soft">Detalles básicos sobre el establecimiento avícola.</p>
-          
-          <div class="form-grid">
-            <div class="form-field">
-              <label for="farmName">Nombre de la Granja</label>
-              <input type="text" id="farmName" [(ngModel)]="settings.farmName" name="farmName" required />
-            </div>
-
-            <div class="form-field">
-              <label for="ownerName">Propietario / Responsable</label>
-              <input type="text" id="ownerName" [(ngModel)]="settings.ownerName" name="ownerName" required />
-            </div>
-
-            <div class="form-field">
-              <label for="location">Ubicación / Dirección</label>
-              <input type="text" id="location" [(ngModel)]="settings.location" name="location" />
-            </div>
-
-            <div class="form-field">
-              <label for="phone">Teléfono de Contacto</label>
-              <input type="text" id="phone" [(ngModel)]="settings.phone" name="phone" />
-            </div>
-          </div>
-        </div>
-        <div class="form-footer">
-          <button type="submit" class="btn btn-primary"><i class="pi pi-check"></i> Guardar Cambios</button>
-        </div>
-      </form>
-
-      <!-- Tab 2: Alertas y Umbrales -->
+      <!-- Tab: Alertas y Umbrales -->
       <form *ngIf="activeTab === 'alertas'" (ngSubmit)="saveSettings()" class="settings-form">
         <div class="settings-card">
           <h3>Umbrales de Control y Alertas</h3>
@@ -125,61 +79,44 @@
               </div>
               <small class="field-help">Cantidad recomendada de alimento en gramos por ave al día.</small>
             </div>
-          </div>
-        </div>
-        <div class="form-footer">
-          <button type="submit" class="btn btn-primary"><i class="pi pi-check"></i> Guardar Cambios</button>
-        </div>
-      </form>
 
-      <!-- Tab 3: Preferencias -->
-      <form *ngIf="activeTab === 'preferencias'" (ngSubmit)="saveSettings()" class="settings-form">
-        <div class="settings-card">
-          <h3>Preferencias de Interfaz</h3>
-          <p class="card-subtitle text-soft">Ajustes visuales y regionales para la aplicación.</p>
-          
-          <div class="form-grid">
             <div class="form-field">
-              <label for="currency">Moneda de Costos</label>
-              <select id="currency" [(ngModel)]="settings.currency" name="currency">
-                <option value="COP">Peso Colombiano (COP)</option>
-                <option value="USD">Dólar Estadounidense (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-              </select>
+              <label for="stockCriticalPercent">Stock Crítico respecto al Mínimo (%)</label>
+              <div class="input-with-suffix">
+                <input type="number" id="stockCriticalPercent" [(ngModel)]="settings.stockCriticalPercent" name="stockCriticalPercent" min="1" max="200" required />
+                <span class="suffix">%</span>
+              </div>
+              <small class="field-help">Genera alerta cuando un insumo está en o por debajo de este porcentaje de su stock mínimo.</small>
             </div>
 
             <div class="form-field">
-              <label for="language">Idioma</label>
-              <select id="language" [(ngModel)]="settings.language" name="language">
-                <option value="es">Español (ES)</option>
-                <option value="en">Inglés (EN)</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label for="theme">Tema Visual</label>
-              <select id="theme" [(ngModel)]="settings.theme" name="theme">
-                <option value="light">Claro</option>
-                <option value="dark" disabled>Oscuro (Próximamente)</option>
-              </select>
+              <label for="maxOccupancyRate">Ocupación Máxima de Galpón (%)</label>
+              <div class="input-with-suffix">
+                <input type="number" id="maxOccupancyRate" [(ngModel)]="settings.maxOccupancyRate" name="maxOccupancyRate" min="1" max="100" required />
+                <span class="suffix">%</span>
+              </div>
+              <small class="field-help">Genera alerta cuando un galpón alcanza o supera este porcentaje de ocupación.</small>
             </div>
           </div>
-        </div>
-        <div class="form-footer">
-          <button type="submit" class="btn btn-primary"><i class="pi pi-check"></i> Guardar Cambios</button>
-        </div>
-      </form>
-
-      <!-- Tab 4: Tipos de Alimento CRUD -->
+         </div>
+         <div class="form-footer" *ngIf="auth.canEdit()">
+           <button type="submit" class="btn btn-secondary"><i class="pi pi-save"></i> Guardar Umbrales</button>
+         </div>
+         <div class="alert-result" *ngIf="generatedAlertsCount !== null">
+           <i class="pi pi-info-circle"></i>
+           {{ generatedAlertsCount === 0 ? 'No hay alertas nuevas por generar.' : ('Se generaron ' + generatedAlertsCount + ' alerta(s) nueva(s).') }}
+         </div>
+       </form>
+       <!-- Tab: Tipos de Alimento CRUD -->
       <div *ngIf="activeTab === 'tipos-alimento'" class="settings-card">
         <div class="card-header-action">
           <div>
             <h3>Catálogo de Tipos de Alimento</h3>
             <p class="card-subtitle text-soft">Administra las clasificaciones para la comida de las aves.</p>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="abrirModalCrearTipo()">
-            <i class="pi pi-plus"></i> Nuevo Tipo
-          </button>
+<button class="btn btn-primary btn-sm" (click)="abrirModalCrearTipo()" *ngIf="auth.canEdit()">
+             <i class="pi pi-plus"></i> Nuevo Tipo
+           </button>
         </div>
 
         <div class="table-responsive">
@@ -195,16 +132,17 @@
               <tr *ngFor="let t of tiposAlimento">
                 <td>#{{ t.id_tipo_insumo }}</td>
                 <td><strong>{{ t.nombre }}</strong></td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn-icon btn-edit" (click)="abrirModalEditarTipo(t)" title="Editar">
-                      <i class="pi pi-pencil"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" (click)="eliminarTipoAlimento(t.id_tipo_insumo)" title="Eliminar">
-                      <i class="pi pi-trash"></i>
-                    </button>
-                  </div>
-                </td>
+<td>
+          <div class="action-buttons" *ngIf="auth.canEdit()">
+            <button class="btn-icon btn-edit" (click)="abrirModalEditarTipo(t)" title="Editar">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="eliminarTipoAlimento(t.id_tipo_insumo)" title="Eliminar">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
+        </td>
               </tr>
               <tr *ngIf="tiposAlimento.length === 0">
                 <td colspan="3" class="text-center text-soft py-4">No hay tipos de alimento registrados.</td>
@@ -214,16 +152,16 @@
         </div>
       </div>
 
-      <!-- Tab 5: Unidades de Medida CRUD -->
+      <!-- Tab: Unidades de Medida CRUD -->
       <div *ngIf="activeTab === 'unidades-medida'" class="settings-card">
         <div class="card-header-action">
           <div>
             <h3>Catálogo de Unidades de Medida</h3>
             <p class="card-subtitle text-soft">Administra las unidades métricas para pesar alimento e insumos.</p>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="abrirModalCrearUnidad()">
-            <i class="pi pi-plus"></i> Nueva Unidad
-          </button>
+<button class="btn btn-primary btn-sm" (click)="abrirModalCrearUnidad()" *ngIf="auth.canEdit()">
+             <i class="pi pi-plus"></i> Nueva Unidad
+           </button>
         </div>
 
         <div class="table-responsive">
@@ -241,16 +179,17 @@
                 <td>#{{ u.id_unidad }}</td>
                 <td><strong>{{ u.nombre }}</strong></td>
                 <td><span class="abbr-badge">{{ u.abreviatura }}</span></td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn-icon btn-edit" (click)="abrirModalEditarUnidad(u)" title="Editar">
-                      <i class="pi pi-pencil"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" (click)="eliminarUnidadMedida(u.id_unidad)" title="Eliminar">
-                      <i class="pi pi-trash"></i>
-                    </button>
-                  </div>
-                </td>
+<td>
+          <div class="action-buttons" *ngIf="auth.canEdit()">
+            <button class="btn-icon btn-edit" (click)="abrirModalEditarUnidad(u)" title="Editar">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="btn-icon btn-delete" (click)="eliminarUnidadMedida(u.id_unidad)" title="Eliminar">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
+        </td>
               </tr>
               <tr *ngIf="unidadesMedida.length === 0">
                 <td colspan="4" class="text-center text-soft py-4">No hay unidades de medida registradas.</td>
@@ -260,16 +199,16 @@
         </div>
       </div>
 
-      <!-- Tab 6: Razas CRUD -->
+      <!-- Tab: Razas CRUD -->
       <div *ngIf="activeTab === 'razas'" class="settings-card">
         <div class="card-header-action">
           <div>
             <h3>Catálogo de Razas de Gallinas</h3>
             <p class="card-subtitle text-soft">Administra las razas de gallinas ponedoras en tu granja.</p>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="abrirModalCrearRaza()">
-            <i class="pi pi-plus"></i> Nueva Raza
-          </button>
+<button class="btn btn-primary btn-sm" (click)="abrirModalCrearRaza()" *ngIf="auth.canEdit()">
+             <i class="pi pi-plus"></i> Nueva Raza
+           </button>
         </div>
 
         <div class="table-responsive">
@@ -286,19 +225,21 @@
               <tr *ngFor="let r of razas">
                 <td>#{{ r.id_raza }}</td>
                 <td><strong>{{ r.nombre_raza }}</strong></td>
-                <td>
-                  <div class="toggle-switch">
-                    <input
+<td>
+                   <div class="toggle-switch" *ngIf="auth.canEdit()">
+                     <input
                       type="checkbox"
                       [id]="'toggle-raza-' + r.id_raza"
                       [checked]="r.activo"
                       (change)="toggleRazaStatus(r)"
+                      [disabled]="!auth.canEdit()"
                     />
-                    <label [for]="'toggle-raza-' + r.id_raza" class="toggle-slider"></label>
-                  </div>
-                </td>
-                <td>
-                  <div class="action-buttons">
+                     <label [for]="'toggle-raza-' + r.id_raza" class="toggle-slider"></label>
+                   </div>
+                   <span *ngIf="!auth.canEdit()" class="text-soft">{{ r.activo ? 'Activo' : 'Inactivo' }}</span>
+                 </td>
+<td>
+                  <div class="action-buttons" *ngIf="auth.canEdit()">
                     <button class="btn-icon btn-edit" (click)="abrirModalEditarRaza(r)" title="Editar">
                       <i class="pi pi-pencil"></i>
                     </button>
@@ -306,6 +247,7 @@
                       <i class="pi pi-trash"></i>
                     </button>
                   </div>
+                  <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
                 </td>
               </tr>
               <tr *ngIf="razas.length === 0">
@@ -319,28 +261,28 @@
     </div>
   </div>
 
-  <!-- MODAL: CREAR/EDITAR TIPO ALIMENTO -->
-  <div class="modal-backdrop" *ngIf="mostrarModalTipo">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>{{ tipoEditando ? 'Editar Tipo de Alimento' : 'Nuevo Tipo de Alimento' }}</h3>
-        <button class="close-btn" (click)="cerrarModalTipo()">&times;</button>
-      </div>
-      <form (ngSubmit)="guardarTipoAlimento()" class="modal-form">
-        <div class="form-field">
-          <label for="tipoNombre">Nombre del Tipo de Alimento *</label>
-          <input type="text" id="tipoNombre" [(ngModel)]="tipoForm.nombre" name="nombre" placeholder="Ej: Pre-postura, Engorde, Iniciador" required />
-        </div>
+<!-- MODAL: CREAR/EDITAR TIPO ALIMENTO -->
+   <div class="modal-backdrop" *ngIf="mostrarModalTipo && auth.canEdit()">
+     <div class="modal-card">
+       <div class="modal-header">
+         <h3>{{ tipoEditando ? 'Editar Tipo de Alimento' : 'Nuevo Tipo de Alimento' }}</h3>
+         <button class="close-btn" (click)="cerrarModalTipo()">&times;</button>
+       </div>
+       <form (ngSubmit)="guardarTipoAlimento()" class="modal-form">
+         <div class="form-field">
+           <label for="tipoNombre">Nombre del Tipo de Alimento *</label>
+           <input type="text" id="tipoNombre" [(ngModel)]="tipoForm.nombre" name="nombre" placeholder="Ej: Pre-postura, Engorde, Iniciador" required />
+         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="cerrarModalTipo()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="guardando">
-            <i class="pi pi-check"></i> Guardar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+         <div class="modal-footer">
+           <button type="button" class="btn btn-secondary" (click)="cerrarModalTipo()">Cancelar</button>
+           <button type="submit" class="btn btn-primary" [disabled]="guardando">
+             <i class="pi pi-check"></i> Guardar
+           </button>
+         </div>
+       </form>
+     </div>
+   </div>
 
   <!-- MODAL: CREAR/EDITAR UNIDAD MEDIDA -->
   <div class="modal-backdrop" *ngIf="mostrarModalUnidad">

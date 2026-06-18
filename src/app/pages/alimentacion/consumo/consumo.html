@@ -1,7 +1,7 @@
 <div class="consumo-container">
   <div class="header-section">
     <h2>Consumo e Insumos</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Registrar Consumo
     </button>
   </div>
@@ -47,7 +47,7 @@
           <th>Cantidad Consumida</th>
           <th>Tipo Movimiento</th>
           <th>Registrado Por</th>
-          <th>Acciones</th>
+          <th *ngIf="!auth.isVisitante()">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -62,8 +62,8 @@
               {{ mov.tipo_movimiento === 'SALIDA' ? 'AJUSTE / DESCARTE' : mov.tipo_movimiento }}
             </span>
           </td>
-          <td>{{ mov.creado_por?.nombre || 'N/A' }}</td>
-          <td>
+          <td>{{ getUsuarioDisplayName(mov.creado_por) }}</td>
+          <td *ngIf="!auth.isVisitante()">
             <div class="action-buttons">
               <button class="btn btn-delete btn-sm" (click)="eliminarMovimiento(mov.id_movimiento)">
                 <i class="pi pi-trash"></i> Eliminar
@@ -139,11 +139,13 @@
           </div>
 
           <div class="form-field">
-            <label for="formCreador">Registrado Por</label>
-            <select id="formCreador" name="creado_por" [(ngModel)]="movimientoForm.creado_por" required>
-              <option [value]="undefined" disabled>Seleccione un usuario</option>
-              <option *ngFor="let user of usuarios" [value]="user.id">{{ user.nombre }}</option>
-            </select>
+            <label>Registrado Por</label>
+            <input
+              type="text"
+              [value]="activeUserNombre"
+              disabled
+              style="background-color: #e9ecef; cursor: not-allowed; border: 1px solid #ced4da; padding: 0.375rem 0.75rem; border-radius: 0.25rem; width: 100%;"
+            />
           </div>
         </div>
         

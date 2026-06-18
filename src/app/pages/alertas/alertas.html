@@ -1,7 +1,7 @@
 <div class="alertas-page-container">
   <div class="header-section">
     <h2>Centro de Alertas</h2>
-    <div class="header-actions">
+    <div class="header-actions" *ngIf="!auth.isVisitante()">
       <button class="btn btn-secondary" (click)="marcarTodasComoLeidas()" [disabled]="loading || alertas.length === 0">
         <i class="pi pi-check-all mr-2"></i>Marcar visibles como leídas
       </button>
@@ -94,7 +94,7 @@
             <span *ngIf="sortBy === 'fecha_creacion'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Asociado a</th>
-          <th>Acciones</th>
+          <th *ngIf="!auth.isVisitante()">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -118,7 +118,7 @@
           </td>
           <td>
             <span class="badge" [class.badge-read]="alert.leida" [class.badge-unread]="!alert.leida">
-              {{ alert.leida ? 'Leída' : 'No leída' }}
+              {{ alert.leida ? 'Leída' : 'No leídas' }}
             </span>
           </td>
           <td>{{ alert.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -129,7 +129,7 @@
               <span *ngIf="!alert.lote && !alert.galpon" class="muted-text">ninguna</span>
             </div>
           </td>
-          <td>
+          <td *ngIf="!auth.isVisitante()">
             <div class="action-buttons">
               <button class="btn btn-edit btn-sm" [title]="alert.leida ? 'Marcar como no leída' : 'Marcar como leída'" (click)="toggleLeida(alert)">
                 <i class="pi" [ngClass]="alert.leida ? 'pi-eye-slash' : 'pi-eye'"></i>

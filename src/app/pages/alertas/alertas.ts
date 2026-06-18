@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertaService } from '../../services/alerta';
@@ -8,6 +8,7 @@ import { Alerta, FilterAlertaParams } from '../../interfaces/alerta.interface';
 import { Lote } from '../../interfaces/lote.interface';
 import { Galpon } from '../../interfaces/galpon.interface';
 import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-alertas',
@@ -18,6 +19,7 @@ import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.in
 })
 export class Alertas implements OnInit {
   alertas: Alerta[] = [];
+  auth = inject(AuthService);
   lotes: Lote[] = [];
   galpones: Galpon[] = [];
 
@@ -180,6 +182,7 @@ export class Alertas implements OnInit {
   }
 
   toggleLeida(alerta: Alerta): void {
+    if (this.auth.isVisitante()) return;
     const nuevoEstado = !alerta.leida;
     this.alertaService.updateAlerta(alerta.id_alerta, { leida: nuevoEstado }).subscribe({
       next: () => {
@@ -193,6 +196,7 @@ export class Alertas implements OnInit {
   }
 
   marcarTodasComoLeidas(): void {
+    if (this.auth.isVisitante()) return;
     const unreadAlerts = this.alertas.filter((a) => !a.leida);
     if (unreadAlerts.length === 0) return;
 
@@ -217,7 +221,8 @@ export class Alertas implements OnInit {
   }
 
   eliminarAlerta(id: number): void {
-    if (confirm('¿Está seguro de que desea descartar esta alerta?')) {
+    if (this.auth.isVisitante()) return;
+    if (confirm('¿Está seguro de que desea eliminar este registro de alertas?')) {
       this.alertaService.deleteAlerta(id).subscribe({
         next: () => {
           this.loadAlertas();
@@ -231,6 +236,7 @@ export class Alertas implements OnInit {
   }
 
   abrirModalCrear(): void {
+    if (this.auth.isVisitante()) return;
     this.guardando = false;
     this.alertaForm = {
       titulo: '',
@@ -251,6 +257,7 @@ export class Alertas implements OnInit {
   }
 
   guardarAlerta(): void {
+    if (this.auth.isVisitante()) return;
     if (!this.alertaForm.titulo.trim() || !this.alertaForm.mensaje.trim()) return;
 
     this.guardando = true;

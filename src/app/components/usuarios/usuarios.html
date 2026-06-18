@@ -30,12 +30,13 @@
              {{ usuario.activo ? 'Activo' : 'Inactivo' }}
            </span>
          </td>
-         <td>
-           <div class="toggle-switch">
-             <input type="checkbox" id="toggle-{{usuario.id}}" [checked]="usuario.activo" (change)="toggleUserStatus(usuario)">
-             <label for="toggle-{{usuario.id}}" class="toggle-slider"></label>
-           </div>
-         </td>
+<td>
+            <div class="toggle-switch" *ngIf="auth.canEdit()">
+              <input type="checkbox" id="toggle-{{usuario.id}}" [checked]="usuario.activo" (change)="toggleUserStatus(usuario)">
+              <label for="toggle-{{usuario.id}}" class="toggle-slider"></label>
+            </div>
+            <span *ngIf="!auth.canEdit()" class="text-soft">{{ usuario.activo ? 'Activo' : 'Inactivo' }}</span>
+          </td>
        </tr>
      </tbody>
    </table>

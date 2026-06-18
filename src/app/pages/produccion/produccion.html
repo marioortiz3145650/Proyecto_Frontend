@@ -1,7 +1,7 @@
 <div class="produccion-container">
   <div class="header-section">
     <h2>Producción de Huevos</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Registrar Producción
     </button>
   </div>
@@ -30,7 +30,7 @@
 
       <div class="filter-field">
         <label for="limitSelect">Items por página</label>
-        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
+        <select id="limitSelect" [(ngModel)]="limit" (change)="changeLimit()">
           <option [ngValue]="5">5</option>
           <option [ngValue]="10">10</option>
           <option [ngValue]="25">25</option>
@@ -68,7 +68,7 @@
             <span *ngIf="sortBy === 'total'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
           <th>Registrado Por</th>
-          <th>Acciones</th>
+          <th *ngIf="!auth.isVisitante()">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -84,8 +84,8 @@
           <td>
             <span class="badge active">{{ prod.total }}</span>
           </td>
-          <td>{{ prod.creado_por?.nombre || prod.creado_por?.nombre_usuario || 'N/A' }}</td>
-          <td>
+          <td>{{ getUsuarioDisplayName(prod.creado_por) }}</td>
+          <td *ngIf="!auth.isVisitante()">
             <div class="action-buttons">
               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(prod)">
                 <i class="pi pi-pencil"></i> Editar
@@ -137,19 +137,22 @@
             />
           </div>
 
-          <div class="form-field">
-            <label for="formLote">Lote</label>
-            <select id="formLote" name="lote_id" [(ngModel)]="produccionForm.lote_id" required>
-              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="formUsuario">Registrado Por (Trabajador)</label>
-            <select id="formUsuario" name="creado_por" [(ngModel)]="produccionForm.creado_por" required>
-              <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }} ({{ u.nombre_usuario }})</option>
-            </select>
-          </div>
+           <div class="form-field">
+             <label for="formLote">Lote</label>
+             <select id="formLote" name="lote_id" [(ngModel)]="produccionForm.lote_id" required>
+               <option *ngFor="let lote of lotes" [ngValue]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+             </select>
+           </div>
+ 
+           <div class="form-field">
+             <label>Registrado Por</label>
+             <input
+               type="text"
+               [value]="produccionEditando ? getUsuarioDisplayName(produccionEditando.creado_por) : activeUserNombre"
+               disabled
+               style="background-color: #e9ecef; cursor: not-allowed; border: 1px solid #ced4da; padding: 0.375rem 0.75rem; border-radius: 0.25rem; width: 100%;"
+             />
+           </div>
 
           <div class="form-grid-three">
             <div class="form-field">

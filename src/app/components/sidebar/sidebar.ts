@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { filter } from 'rxjs/operators';
 
 interface MenuItem {
   label: string;
@@ -26,10 +28,11 @@ interface MenuItem {
       </div>
 
       <nav class="space-y-2">
-        <ng-container *ngFor="let item of menuItems">
+        <ng-container *ngFor="let item of visibleMenuItems">
           <div *ngIf="item.children" class="mt-4">
             <button 
               (click)="toggleMenu(item.label)"
+              [class.bg-green-700]="isSectionActive(item)"
               class="flex items-center w-full px-4 py-2 rounded hover:bg-green-700 transition-colors bg-transparent border-0 text-white cursor-pointer">
               <i class="{{ item.icon }} mr-3"></i>
               <span class="flex-1 text-left">{{ item.label }}</span>
@@ -39,7 +42,7 @@ interface MenuItem {
               <a *ngFor="let child of item.children"
                  [routerLink]="child.route"
                  routerLinkActive="bg-green-700"
-                 (click)="closeSidebar.emit()"
+                 (click)="onChildClick(item.label)"
                  class="flex items-center px-4 py-2 rounded hover:bg-green-700 transition-colors text-sm text-white no-underline">
                 <i class="{{ child.icon }} mr-3 text-xs"></i>
                 <span>{{ child.label }}</span>
@@ -60,16 +63,18 @@ interface MenuItem {
   `,
   styles: []
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   expandedMenus: { [key: string]: boolean } = {};
   @Input() isOpen = false;
   @Output() closeSidebar = new EventEmitter<void>();
+  auth = inject(AuthService);
+  private router = inject(Router);
+  private currentParentSection: string | null = null;
 
-  menuItems: MenuItem[] = [
+  allMenuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
-    { label: 'Usuarios', icon: 'pi pi-users', route: '/usuarios' },
-    { 
-      label: 'Gallinas', 
+    {
+      label: 'Gallinas',
       icon: 'pi pi-box',
       children: [
         { label: 'Lotes', icon: 'pi pi-list', route: '/gallinas/lotes' },
@@ -77,8 +82,8 @@ export class SidebarComponent {
       ]
     },
     { label: 'Producción', icon: 'pi pi-chart-line', route: '/produccion' },
-    { 
-      label: 'Alimentación', 
+    {
+      label: 'Alimentación',
       icon: 'pi pi-shopping-cart',
       children: [
         { label: 'Alimentos', icon: 'pi pi-list', route: '/alimentacion/alimentos' },
@@ -90,6 +95,62 @@ export class SidebarComponent {
     { label: 'Reportes', icon: 'pi pi-file', route: '/reportes' },
     { label: 'Configuración', icon: 'pi pi-cog', route: '/configuracion' }
   ];
+
+  get visibleMenuItems(): MenuItem[] {
+    if (this.auth.isVisitante()) {
+      return this.allMenuItems.filter(item => item.label !== 'Configuración');
+    }
+    return this.allMenuItems;
+  }
+
+  ngOnInit(): void {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.updateExpandedMenus();
+    });
+    this.updateExpandedMenus();
+  }
+
+  private getActiveParentSection(): string | null {
+    const url = this.router.url;
+    const segments = url.split('/');
+    const firstSegment = segments[1];
+    
+    // Encontrar el menú padre que coincide con el primer segmento
+    for (const item of this.allMenuItems) {
+      if (item.children) {
+        const childRoutes = item.children.map(c => c.route?.split('/')[1]).filter(Boolean);
+        if (childRoutes.includes(firstSegment)) {
+          return item.label.toLowerCase();
+        }
+      }
+      if (item.route?.split('/')[1] === firstSegment) {
+        return null; // No es hijo de un menú
+      }
+    }
+    return null;
+  }
+
+  isSectionActive(item: MenuItem): boolean {
+    if (!item.children) return false;
+    const childRoutes = item.children.map(c => c.route?.split('/')[1]).filter(Boolean);
+    const currentParent = this.getActiveParentSection();
+    return item.label.toLowerCase() === currentParent;
+  }
+
+  onChildClick(parentLabel: string): void {
+    this.currentParentSection = parentLabel.toLowerCase();
+  }
+
+  updateExpandedMenus(): void {
+    const currentParent = this.getActiveParentSection();
+    this.allMenuItems.forEach(item => {
+      if (item.children) {
+        this.expandedMenus[item.label] = item.label.toLowerCase() === currentParent;
+      }
+    });
+  }
 
   toggleMenu(label: string): void {
     this.expandedMenus[label] = !this.expandedMenus[label];

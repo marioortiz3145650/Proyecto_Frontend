@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { roleGuard } from './guards/auth.guard';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout';
 import { LoginComponent } from './pages/login/login';
-import { UsuariosComponent } from './components/usuarios/usuarios';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { Lotes } from './pages/gallinas/lotes/lotes';
 import { Galpones } from './pages/gallinas/galpones/galpones';
@@ -31,7 +31,6 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
-      { path: 'usuarios', component: UsuariosComponent },
       { path: 'gallinas/lotes', component: Lotes },
       { path: 'gallinas/galpones', component: Galpones },
       { path: 'gallinas/razas', component: Razas },
@@ -41,7 +40,7 @@ export const routes: Routes = [
       { path: 'salud', component: Salud },
       { path: 'alertas', component: Alertas },
       { path: 'reportes', component: Reportes },
-      { path: 'configuracion', component: Configuracion },
+      { path: 'configuracion', component: Configuracion, canActivate: [roleGuard] },
     ]
   },
   { path: '**', redirectTo: '/login' }

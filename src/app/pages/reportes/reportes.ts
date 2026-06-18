@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProduccionService } from '../../services/produccion';
@@ -9,6 +9,7 @@ import { Lote } from '../../interfaces/lote.interface';
 import { Produccion } from '../../interfaces/produccion.interface';
 import { Muerte } from '../../interfaces/muerte.interface';
 import { forkJoin } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-reportes',
@@ -18,6 +19,7 @@ import { forkJoin } from 'rxjs';
   styleUrl: './reportes.css',
 })
 export class Reportes implements OnInit {
+  auth = inject(AuthService);
   lotes: Lote[] = [];
   producciones: Produccion[] = [];
   movimientos: any[] = [];
@@ -306,6 +308,7 @@ export class Reportes implements OnInit {
   }
 
   imprimirReporte(): void {
+    if (this.auth.isVisitante()) return;
     window.print();
   }
 }

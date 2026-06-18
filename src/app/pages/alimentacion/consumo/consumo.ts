@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MovimientoInsumoService } from '../../../services/movimiento-insumo';
@@ -8,6 +8,8 @@ import { UsersService } from '../../../services/users';
 import { Alimento } from '../../../interfaces/alimento.interface';
 import { Lote } from '../../../interfaces/lote.interface';
 import { Usuario } from '../../../interfaces/usuario.interface';
+import { AuthService } from '../../../services/auth.service';
+import { AlertaService } from '../../../services/alerta';
 
 @Component({
   selector: 'app-consumo',
@@ -21,6 +23,10 @@ export class Consumo implements OnInit {
   alimentos: Alimento[] = [];
   lotes: Lote[] = [];
   usuarios: Usuario[] = [];
+  auth = inject(AuthService);
+  private alertaService = inject(AlertaService);
+
+  usuariosAutorizados: Usuario[] = [];
 
   loading = false;
   guardando = false;
@@ -87,10 +93,25 @@ export class Consumo implements OnInit {
     });
   }
 
+  getRolNombre(rol: any): string {
+    if (!rol) return '';
+    return typeof rol === 'object' && rol.nombre ? rol.nombre : rol;
+  }
+
+  getRolConMayuscula(rol: any): string {
+    const nombre = this.getRolNombre(rol);
+    if (!nombre) return '';
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase();
+  }
+
   loadUsuarios(): void {
     this.usersService.getUsers({ limit: 100 }).subscribe({
       next: (response) => {
         this.usuarios = response.data;
+        this.usuariosAutorizados = this.usuarios.filter(u => {
+          const rolNombre = this.getRolNombre(u.rol);
+          return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
+        });
         this.cdr.detectChanges();
       },
       error: () => {
@@ -131,7 +152,7 @@ export class Consumo implements OnInit {
   }
 
   abrirModalCrear(): void {
-    const adminUser = this.usuarios.find(u => u.nombre_usuario === 'admin' || u.nombre.toLowerCase().includes('admin'));
+    if (this.auth.isVisitante()) return;
     this.movimientoForm = {
       fecha: new Date().toISOString().substring(0, 10),
       cantidad: 0,
@@ -139,10 +160,20 @@ export class Consumo implements OnInit {
       observaciones: '',
       insumo_id: this.alimentos.length > 0 ? this.alimentos[0].id_insumo : undefined,
       lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      creado_por: adminUser ? adminUser.id : (this.usuarios.length > 0 ? this.usuarios[0].id : undefined),
     };
+    const activeUser = this.auth.getUser();
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+    this.movimientoForm.creado_por = defaultCreator?.id;
     this.mostrarModal = true;
     this.cdr.detectChanges();
+  }
+
+  get activeUserNombre(): string {
+    const user = this.auth.getUser();
+    if (!user) return 'Desconocido';
+    const fullUser = this.usuariosAutorizados.find(u => String(u.id) === String(user.id));
+    if (fullUser?.nombre) return fullUser.nombre;
+    return user.username.toLowerCase() === 'admin' ? 'Administrador Sistema' : user.username;
   }
 
   cerrarModal(): void {
@@ -151,27 +182,28 @@ export class Consumo implements OnInit {
   }
 
   guardarMovimiento(): void {
+    if (this.auth.isVisitante()) return;
     if (this.guardando) return;
-    if (!this.movimientoForm.insumo_id || !this.movimientoForm.lote_id || !this.movimientoForm.creado_por) {
-      return;
-    }
+    if (!this.movimientoForm.insumo_id || !this.movimientoForm.lote_id) return;
 
     this.guardando = true;
-    const payload = {
+    const payload: any = {
       fecha: this.movimientoForm.fecha,
       cantidad: Number(this.movimientoForm.cantidad),
       tipo_movimiento: this.movimientoForm.tipo_movimiento,
       observaciones: this.movimientoForm.observaciones,
       insumo_id: Number(this.movimientoForm.insumo_id),
       lote_id: Number(this.movimientoForm.lote_id),
-      creado_por: this.movimientoForm.creado_por,
     };
+    const activeUser = this.auth.getUser();
+    payload.creado_por = activeUser?.id ? String(activeUser.id) : this.movimientoForm.creado_por;
 
     this.movimientoService.createMovimiento(payload).subscribe({
       next: () => {
         this.guardando = false;
         this.cerrarModal();
         this.loadMovimientos();
+        this.alertaService.evaluarYGenerarAlertas().subscribe();
       },
       error: (err) => {
         this.error = 'Error al registrar consumo de alimento';
@@ -184,10 +216,12 @@ export class Consumo implements OnInit {
   }
 
   eliminarMovimiento(id: number): void {
+    if (this.auth.isVisitante()) return;
     if (confirm('¿Está seguro de que desea eliminar este registro de consumo?')) {
       this.movimientoService.deleteMovimiento(id).subscribe({
         next: () => {
           this.loadMovimientos();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: () => {
           this.error = 'Error al eliminar consumo';
@@ -195,5 +229,14 @@ export class Consumo implements OnInit {
         }
       });
     }
+  }
+
+  getUsuarioDisplayName(user: any): string {
+    if (!user) return 'N/A';
+    const nombre = user.nombre || user.nombre_usuario || '';
+    if (nombre.toLowerCase() === 'admin') {
+      return 'Administrador Sistema';
+    }
+    return nombre;
   }
 }
