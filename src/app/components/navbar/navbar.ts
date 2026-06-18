@@ -18,7 +18,7 @@ import { AlertaService } from '../../services/alerta';
             class="md:hidden p-2 mr-2 text-gray-600 hover:text-gray-900 focus:outline-none bg-transparent border-0 cursor-pointer">
             <i class="pi pi-bars text-xl"></i>
           </button>
-          <span class="text-xl font-bold text-gray-800">🐔 Granja Avícola</span>
+          <span class="text-xl font-bold text-gray-800">Laying Hens</span>
         </div>
         <div class="flex items-center space-x-4 relative">
           <button
