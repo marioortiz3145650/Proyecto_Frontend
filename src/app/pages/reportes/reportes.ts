@@ -309,6 +309,137 @@ export class Reportes implements OnInit {
 
   imprimirReporte(): void {
     if (this.auth.isVisitante()) return;
-    window.print();
+
+    const styles = this.getPrintStyles();
+    const content = this.buildPrintContent();
+    const html = [
+      '<!DOCTYPE html>',
+      '<html><head>',
+      '<meta charset="utf-8">',
+      '<title>Reporte - Granja Avícola</title>',
+      styles,
+      '<style>',
+      '  @page { margin: 0; }',
+      '  html, body { margin: 0; padding: 0; background: white; }',
+      '  body { padding: 0; font-family: Arial, sans-serif; color: #000; }',
+      '  * { box-sizing: border-box; }',
+      '  .print-page { display: flex; flex-direction: column; min-height: 100vh; padding: 15mm; }',
+      '</style>',
+      '</head>',
+      '<body>',
+      '<div class="print-page">',
+      content,
+      '</div>',
+      '</body></html>'
+    ].join('\n');
+
+    const win = window.open('', '_blank');
+    if (!win) {
+      window.print();
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.onafterprint = () => win.close();
+    win.print();
+  }
+
+  private getPrintStyles(): string {
+    return '<link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">';
+  }
+
+  private buildPrintContent(): string {
+    const r = this.reporte;
+    const f = this.filtros;
+    const solo = f.tipo_reporte;
+
+    const rango = (f.fecha_inicio || '&mdash;') + ' al ' + (f.fecha_fin || '&mdash;');
+    const loteLabel = f.lote_id ? 'Lote ' + f.lote_id : 'Todos los lotes';
+
+    const formatNum = (n: number) => n.toLocaleString('es-CO');
+
+    const metricas: string[] = [];
+    if (solo === 'todo' || solo === 'produccion') {
+      metricas.push(
+        '<div class="metric"><div class="metric-label">Total Huevos</div><div class="metric-value">' + formatNum(r.totalProduccion) + '</div><div class="metric-sub">Huevos recolectados</div></div>',
+        '<div class="metric"><div class="metric-label">Promedio Diario</div><div class="metric-value">' + formatNum(r.promedioDiario) + '</div><div class="metric-sub">Huevos / d&iacute;a</div></div>'
+      );
+    }
+    if (solo === 'todo' || solo === 'alimentacion') {
+      metricas.push(
+        '<div class="metric"><div class="metric-label">Consumo Alimento</div><div class="metric-value">' + formatNum(r.totalConsumoAlimento) + ' kg</div><div class="metric-sub">Alimento suministrado</div></div>'
+      );
+    }
+    if (solo === 'todo' || solo === 'mortalidad') {
+      metricas.push(
+        '<div class="metric"><div class="metric-label">Mortalidad</div><div class="metric-value">' + r.totalMuerte + '</div><div class="metric-sub">Tasa de ' + r.tasaMortalidad + '%</div></div>'
+      );
+    }
+
+    let categoriasHtml = '';
+    if (solo === 'todo' || solo === 'produccion') {
+      categoriasHtml =
+        '<h3 class="section-title">Distribuci&oacute;n por Categor&iacute;as</h3>' +
+        '<table class="table"><thead><tr><th>Categor&iacute;a</th><th>Cantidad</th><th>%</th></tr></thead><tbody>' +
+        '<tr><td>Jumbo</td><td>' + formatNum(r.jumbo) + '</td><td>' + r.porcentajeJumbo + '%</td></tr>' +
+        '<tr><td>AAA</td><td>' + formatNum(r.aaa) + '</td><td>' + r.porcentajeAAA + '%</td></tr>' +
+        '<tr><td>AA</td><td>' + formatNum(r.aa) + '</td><td>' + r.porcentajeAA + '%</td></tr>' +
+        '<tr><td>A</td><td>' + formatNum(r.a) + '</td><td>' + r.porcentajeA + '%</td></tr>' +
+        '<tr><td>B</td><td>' + formatNum(r.b) + '</td><td>' + r.porcentajeB + '%</td></tr>' +
+        '<tr><td>C</td><td>' + formatNum(r.c) + '</td><td>' + r.porcentajeC + '%</td></tr>' +
+        '</tbody></table>';
+    }
+
+    let tablaLotesHtml = '';
+    if (r.resumenLotes.length > 0) {
+      const rows = r.resumenLotes.map(function(l) {
+        return '<tr><td>Lote ' + l.id_lote + '</td><td>' + l.raza + '</td><td>' + formatNum(l.gallinas) + '</td><td>' + formatNum(l.produccion) + '</td><td>' + formatNum(l.consumo) + ' kg</td><td>' + l.mortalidad + '</td></tr>';
+      }).join('');
+      tablaLotesHtml =
+        '<h3 class="section-title" style="margin-top:24px">Rendimiento de Lotes</h3>' +
+        '<table class="table"><thead><tr><th>Lote</th><th>Raza</th><th>Gallinas</th><th>Huevos</th><th>Consumo</th><th>Muertes</th></tr></thead><tbody>' +
+        rows +
+        '</tbody></table>';
+    }
+
+    let causasHtml = '';
+    if ((solo === 'todo' || solo === 'mortalidad') && r.mortalidadPorCausa.length > 0) {
+      const rows = r.mortalidadPorCausa.map(function(c) {
+        return '<tr><td>' + c.causa + '</td><td>' + c.cantidad + '</td></tr>';
+      }).join('');
+      causasHtml =
+        '<h3 class="section-title" style="margin-top:24px">Mortalidad por Causa</h3>' +
+        '<table class="table"><thead><tr><th>Causa</th><th>Gallinas</th></tr></thead><tbody>' +
+        rows +
+        '</tbody></table>';
+    }
+
+    const today = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    return [
+      '<div class="print-report">',
+      '<h1 style="margin:0 0 4px;font-size:22px;">🐔 Reporte de Producci&oacute;n</h1>',
+      '<p style="margin:0 0 16px;color:#555;font-size:13px;">Rango: ' + rango + ' &nbsp;|&nbsp; ' + loteLabel + '</p>',
+      '<div class="metrics-grid">' + metricas.join('') + '</div>',
+      categoriasHtml,
+      tablaLotesHtml,
+      causasHtml,
+      '<p style="margin-top:24px;font-size:11px;color:#999;text-align:center;">Generado el ' + today + '</p>',
+      '</div>',
+      '<style>',
+      '  .print-report { max-width: 800px; margin: 0 auto; }',
+      '  .metrics-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }',
+      '  .metric { flex: 1; min-width: 160px; padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; border-left: 4px solid #198754; }',
+      '  .metric-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }',
+      '  .metric-value { font-size: 24px; font-weight: 700; color: #000; margin: 4px 0; }',
+      '  .metric-sub { font-size: 11px; color: #888; }',
+      '  .section-title { font-size: 15px; margin: 0 0 8px; color: #333; }',
+      '  .table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 12px; }',
+      '  .table th, .table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #ddd; }',
+      '  .table th { background: #f5f5f5; font-weight: 600; color: #444; }',
+      '  .table tbody tr:last-child td { border-bottom: none; }',
+      '</style>'
+    ].join('\n');
   }
 }
