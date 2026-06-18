@@ -318,7 +318,9 @@ export class Salud implements OnInit {
 
   eliminarMuerte(id: number): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este registro de bajas?')) {
+    const muerte = this.muertes.find(m => m.id_muerte === id);
+    const cantidad = muerte?.cantidad || 0;
+    if (confirm(`¿Está seguro de que desea eliminar este registro de ${cantidad} baja(s)?\n\n⚠️ Las ${cantidad} gallina(s) VOLVERÁN a sumarse al lote #${muerte?.lote?.id_lote || 'desconocido'}.`)) {
       this.muerteService.deleteMuerte(id).subscribe({
         next: () => {
           this.loadMuertes();
