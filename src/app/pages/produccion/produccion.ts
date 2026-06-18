@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProduccionService } from '../../services/produccion';
@@ -8,6 +8,8 @@ import { Produccion, FilterProduccionParams } from '../../interfaces/produccion.
 import { Lote } from '../../interfaces/lote.interface';
 import { Usuario } from '../../interfaces/usuario.interface';
 import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
+import { AuthService } from '../../services/auth.service';
+import { AlertaService } from '../../services/alerta';
 
 @Component({
   selector: 'app-produccion',
@@ -20,6 +22,10 @@ export class ProduccionPage implements OnInit {
   producciones: Produccion[] = [];
   lotes: Lote[] = [];
   usuarios: Usuario[] = [];
+  auth = inject(AuthService);
+  private alertaService = inject(AlertaService);
+
+  usuariosAutorizados: Usuario[] = [];
   meta: PaginationMeta = {
     total: 0,
     page: 1,
@@ -88,10 +94,19 @@ export class ProduccionPage implements OnInit {
     });
   }
 
+  getRolNombre(rol: any): string {
+    if (!rol) return '';
+    return typeof rol === 'object' && rol.nombre ? rol.nombre : rol;
+  }
+
   loadUsuarios(): void {
     this.usersService.getUsers({ limit: 100 }).subscribe({
       next: (response) => {
         this.usuarios = response.data;
+        this.usuariosAutorizados = this.usuarios.filter(u => {
+          const rolNombre = this.getRolNombre(u.rol);
+          return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
+        });
         this.cdr.detectChanges();
       },
       error: () => {
@@ -104,6 +119,7 @@ export class ProduccionPage implements OnInit {
   loadProducciones(): void {
     this.loading = true;
     this.error = null;
+    this.cdr.detectChanges();
 
     const params: PaginationParams & Partial<FilterProduccionParams> = {
       page: this.page,
@@ -167,8 +183,12 @@ export class ProduccionPage implements OnInit {
   }
 
   abrirModalCrear(): void {
+    if (this.auth.isVisitante()) return;
     this.produccionEditando = null;
-    const adminUser = this.usuarios.find(u => u.nombre_usuario === 'admin' || u.nombre.toLowerCase().includes('admin'));
+    
+    const activeUser = this.auth.getUser();
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+
     this.produccionForm = {
       fecha: new Date().toISOString().substring(0, 10),
       jumbo: 0,
@@ -178,15 +198,20 @@ export class ProduccionPage implements OnInit {
       b: 0,
       c: 0,
       lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      creado_por: adminUser ? adminUser.id : (this.usuarios.length > 0 ? this.usuarios[0].id : undefined),
+      creado_por: defaultCreator?.id,
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
   }
 
   abrirModalEditar(prod: Produccion): void {
+    if (this.auth.isVisitante()) return;
     this.produccionEditando = prod;
     const rawDate = prod.fecha ? new Date(prod.fecha).toISOString().substring(0, 10) : '';
+
+    const activeUser = this.auth.getUser();
+    const creadorId = prod.creado_por?.id || (activeUser?.id ? String(activeUser.id) : undefined);
+    const loteId = prod.lote?.id_lote || (this.lotes.length > 0 ? this.lotes[0].id_lote : undefined);
 
     this.produccionForm = {
       fecha: rawDate,
@@ -196,8 +221,8 @@ export class ProduccionPage implements OnInit {
       a: prod.a || 0,
       b: prod.b || 0,
       c: prod.c || 0,
-      lote_id: prod.lote?.id_lote,
-      creado_por: prod.creado_por?.id,
+      lote_id: loteId,
+      creado_por: creadorId,
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -206,6 +231,23 @@ export class ProduccionPage implements OnInit {
   cerrarModal(): void {
     this.mostrarModal = false;
     this.cdr.detectChanges();
+  }
+
+  get activeUserNombre(): string {
+    const user = this.auth.getUser();
+    if (!user) return 'Desconocido';
+    const fullUser = this.usuariosAutorizados.find(u => String(u.id) === String(user.id));
+    if (fullUser?.nombre) return fullUser.nombre;
+    return user.username.toLowerCase() === 'admin' ? 'Administrador Sistema' : user.username;
+  }
+
+  getUsuarioDisplayName(user: any): string {
+    if (!user) return 'Desconocido';
+    const nombre = user.nombre || user.nombre_usuario || '';
+    if (nombre.toLowerCase() === 'admin') {
+      return 'Administrador Sistema';
+    }
+    return nombre;
   }
 
   get totalFormEggs(): number {
@@ -220,11 +262,20 @@ export class ProduccionPage implements OnInit {
   }
 
   guardarProduccion(): void {
-    if (!this.produccionForm.lote_id || !this.produccionForm.creado_por) {
+    console.log('guardarProduccion called. form state:', this.produccionForm);
+    if (this.auth.isVisitante()) {
+      console.warn('Usuario es Visitante. No se permite guardar.');
+      return;
+    }
+    if (!this.produccionForm.lote_id) {
+      console.warn('Falta lote_id en el formulario de producción:', this.produccionForm);
       return;
     }
 
-    const payload = {
+    const activeUser = this.auth.getUser();
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+
+    const payload: any = {
       fecha: this.produccionForm.fecha,
       jumbo: Number(this.produccionForm.jumbo || 0),
       aaa: Number(this.produccionForm.aaa || 0),
@@ -233,14 +284,20 @@ export class ProduccionPage implements OnInit {
       b: Number(this.produccionForm.b || 0),
       c: Number(this.produccionForm.c || 0),
       lote_id: Number(this.produccionForm.lote_id),
-      creado_por: this.produccionForm.creado_por,
     };
+
+    // Al crear un nuevo registro, enviamos el creado_por (usuario logueado)
+    // Al editar, NO lo enviamos en el payload para no sobreescribir el creador original
+    if (!this.produccionEditando) {
+      payload.creado_por = defaultCreator?.id;
+    }
 
     if (this.produccionEditando) {
       this.produccionService.updateProduccion(this.produccionEditando.id_produccion, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.loadProducciones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => {
           console.error('Error al editar producción:', err);
@@ -254,6 +311,7 @@ export class ProduccionPage implements OnInit {
         next: () => {
           this.cerrarModal();
           this.loadProducciones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => {
           console.error('Error al registrar producción:', err);
@@ -266,10 +324,12 @@ export class ProduccionPage implements OnInit {
   }
 
   eliminarProduccion(id: number): void {
+    if (this.auth.isVisitante()) return;
     if (confirm('¿Está seguro de que desea eliminar este registro de producción?')) {
       this.produccionService.deleteProduccion(id).subscribe({
         next: () => {
           this.loadProducciones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => {
           console.error('Error al eliminar producción:', err);

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlimentoService } from '../../../services/alimento';
@@ -6,6 +6,8 @@ import { TipoAlimentoService } from '../../../services/tipo-alimento';
 import { UnidadMedidaService } from '../../../services/unidad-medida';
 import { Alimento, TipoAlimento, UnidadMedida, FilterAlimentoParams } from '../../../interfaces/alimento.interface';
 import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
+import { AuthService } from '../../../services/auth.service';
+import { AlertaService } from '../../../services/alerta';
 
 @Component({
   selector: 'app-alimentos',
@@ -18,6 +20,8 @@ export class Alimentos implements OnInit {
   alimentos: Alimento[] = [];
   tiposAlimento: TipoAlimento[] = [];
   unidadesMedida: UnidadMedida[] = [];
+  auth = inject(AuthService);
+  private alertaService = inject(AlertaService);
   meta: PaginationMeta = {
     total: 0, page: 1, limit: 5, totalPages: 0, hasNext: false, hasPrev: false,
   };
@@ -140,6 +144,7 @@ export class Alimentos implements OnInit {
   changeLimit(): void { this.page = 1; this.loadAlimentos(); }
 
   abrirModalCrear(): void {
+    if (this.auth.isVisitante()) return;
     this.alimentoEditando = null;
     this.guardando = false;
     this.alimentoForm = {
@@ -154,6 +159,7 @@ export class Alimentos implements OnInit {
   }
 
   abrirModalEditar(alimento: Alimento): void {
+    if (this.auth.isVisitante()) return;
     this.alimentoEditando = alimento;
     this.guardando = false;
     this.alimentoForm = {
@@ -169,10 +175,16 @@ export class Alimentos implements OnInit {
 
   cerrarModal(): void { this.mostrarModal = false; this.guardando = false; this.cdr.detectChanges(); }
 
-  abrirModalTipo(): void { this.nuevoTipoForm = { nombre: '' }; this.mostrarModalTipo = true; this.cdr.detectChanges(); }
+  abrirModalTipo(): void {
+    if (this.auth.isVisitante()) return;
+    this.nuevoTipoForm = { nombre: '' };
+    this.mostrarModalTipo = true;
+    this.cdr.detectChanges();
+  }
   cerrarModalTipo(): void { this.mostrarModalTipo = false; this.cdr.detectChanges(); }
 
   guardarTipoAlimento(): void {
+    if (this.auth.isVisitante()) return;
     if (!this.nuevoTipoForm.nombre.trim()) return;
     this.tipoAlimentoService.createTipoAlimento({ nombre: this.nuevoTipoForm.nombre }).subscribe({
       next: (tipo) => {
@@ -184,10 +196,16 @@ export class Alimentos implements OnInit {
     });
   }
 
-  abrirModalUnidad(): void { this.nuevoUnidadForm = { nombre: '', abreviatura: '' }; this.mostrarModalUnidad = true; this.cdr.detectChanges(); }
+  abrirModalUnidad(): void {
+    if (this.auth.isVisitante()) return;
+    this.nuevoUnidadForm = { nombre: '', abreviatura: '' };
+    this.mostrarModalUnidad = true;
+    this.cdr.detectChanges();
+  }
   cerrarModalUnidad(): void { this.mostrarModalUnidad = false; this.cdr.detectChanges(); }
 
   guardarUnidadMedida(): void {
+    if (this.auth.isVisitante()) return;
     if (!this.nuevoUnidadForm.nombre.trim() || !this.nuevoUnidadForm.abreviatura.trim()) return;
     this.unidadMedidaService.createUnidadMedida({
       nombre: this.nuevoUnidadForm.nombre,
@@ -203,6 +221,7 @@ export class Alimentos implements OnInit {
   }
 
   guardarAlimento(): void {
+    if (this.auth.isVisitante()) return;
     if (this.guardando) return;
     if (!this.alimentoForm.tipo_alimento_id || !this.alimentoForm.unidad_medida_id) return;
 
@@ -218,21 +237,33 @@ export class Alimentos implements OnInit {
 
     if (this.alimentoEditando) {
       this.alimentoService.updateAlimento(this.alimentoEditando.id_insumo, payload).subscribe({
-        next: () => { this.cerrarModal(); this.loadAlimentos(); },
+        next: () => {
+          this.cerrarModal();
+          this.loadAlimentos();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+        },
         error: () => { this.error = 'Error al actualizar alimento'; this.guardando = false; this.cdr.detectChanges(); },
       });
     } else {
       this.alimentoService.createAlimento(payload).subscribe({
-        next: () => { this.cerrarModal(); this.loadAlimentos(); },
+        next: () => {
+          this.cerrarModal();
+          this.loadAlimentos();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+        },
         error: () => { this.error = 'Error al registrar alimento'; this.guardando = false; this.cdr.detectChanges(); },
       });
     }
   }
 
   eliminarAlimento(id: number): void {
+    if (this.auth.isVisitante()) return;
     if (confirm('¿Está seguro de que desea eliminar este alimento/insumo?')) {
       this.alimentoService.deleteAlimento(id).subscribe({
-        next: () => { this.loadAlimentos(); },
+        next: () => {
+          this.loadAlimentos();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+        },
         error: () => { this.error = 'Error al eliminar alimento'; this.cdr.detectChanges(); },
       });
     }

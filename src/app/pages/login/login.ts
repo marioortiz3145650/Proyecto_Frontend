@@ -26,6 +26,7 @@ export class LoginComponent {
   username = '';
   password = '';
   loading = false;
+  guestLoading = false;
   errorMsg = '';
   showPassword = false;
 
@@ -56,6 +57,29 @@ export class LoginComponent {
         this.password = '';
         this.errorMsg = err.status === 401
           ? 'Credenciales incorrectas.'
+          : 'Error de conexión. Intenta de nuevo.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loginAsGuest(): void {
+    if (this.guestLoading) return;
+
+    this.guestLoading = true;
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+
+    this.auth.loginAsGuest().subscribe({
+      next: (res) => {
+        localStorage.setItem('access_token', res.access_token);
+        this.guestLoading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.guestLoading = false;
+        this.errorMsg = err.status === 401
+          ? 'No hay usuario visitante configurado.'
           : 'Error de conexión. Intenta de nuevo.';
         this.cdr.detectChanges();
       }

@@ -1,7 +1,7 @@
 <div class="alimentos-container">
   <div class="header-section">
     <h2>Alimentos e Insumos</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Crear Alimento
     </button>
   </div>
@@ -78,7 +78,7 @@
             Stock Mínimo
             <span *ngIf="sortBy === 'stock_minimo'">{{ sortOrder === 'ASC' ? ' ▲' : ' ▼' }}</span>
           </th>
-          <th>Acciones</th>
+          <th *ngIf="!auth.isVisitante()">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -89,7 +89,7 @@
           <td>{{ alim.unidad_medida?.nombre }} ({{ alim.unidad_medida?.abreviatura }})</td>
           <td>{{ alim.stock_actual | number:'1.2-2' }}</td>
           <td>{{ alim.stock_minimo | number:'1.2-2' }}</td>
-          <td>
+          <td *ngIf="!auth.isVisitante()">
             <div class="action-buttons">
               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(alim)">
                 <i class="pi pi-pencil"></i> Editar

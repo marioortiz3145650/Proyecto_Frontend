@@ -5,7 +5,7 @@
       <h2>Reportes y Estadísticas</h2>
       <p class="subtitle text-soft">Analiza la producción, consumo de insumos y mortalidad de tus lotes.</p>
     </div>
-    <button class="btn btn-print" (click)="imprimirReporte()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-print" (click)="imprimirReporte()">
       <i class="pi pi-print"></i> Imprimir Reporte
     </button>
   </div>

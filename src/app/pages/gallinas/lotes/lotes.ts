@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoteService } from '../../../services/lote';
@@ -6,6 +6,8 @@ import { RazaService } from '../../../services/raza';
 import { Lote, FilterLoteParams } from '../../../interfaces/lote.interface';
 import { Raza } from '../../../interfaces/raza.interface';
 import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
+import { AuthService } from '../../../services/auth.service';
+import { AlertaService } from '../../../services/alerta';
 
 @Component({
   selector: 'app-lotes',
@@ -17,6 +19,8 @@ import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination
 export class Lotes implements OnInit {
   lotes: Lote[] = [];
   razas: Raza[] = [];
+  auth = inject(AuthService);
+  private alertaService = inject(AlertaService);
   meta: PaginationMeta = {
     total: 0,
     page: 1,
@@ -138,6 +142,7 @@ export class Lotes implements OnInit {
 
   // Métodos CRUD
   abrirModalCrear(): void {
+    if (this.auth.isVisitante()) return;
     this.loteEditando = null;
     this.loteForm = {
       raza_id: this.razas.length > 0 ? this.razas[0].id_raza : undefined,
@@ -151,6 +156,7 @@ export class Lotes implements OnInit {
   }
 
   abrirModalEditar(lote: Lote): void {
+    if (this.auth.isVisitante()) return;
     this.loteEditando = lote;
     this.loteForm = {
       raza_id: lote.raza?.id_raza,
@@ -169,6 +175,7 @@ export class Lotes implements OnInit {
   }
 
   guardarLote(): void {
+    if (this.auth.isVisitante()) return;
     const payload: any = {
       edad_semanas: Number(this.loteForm.edad_semanas),
       fecha_inicio: this.loteForm.fecha_inicio,
@@ -183,6 +190,7 @@ export class Lotes implements OnInit {
         next: () => {
           this.cerrarModal();
           this.loadLotes();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => console.error('Error al editar lote:', err),
       });
@@ -191,6 +199,7 @@ export class Lotes implements OnInit {
         next: () => {
           this.cerrarModal();
           this.loadLotes();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => console.error('Error al crear lote:', err),
       });
@@ -198,10 +207,12 @@ export class Lotes implements OnInit {
   }
 
   eliminarLote(id: number): void {
+    if (this.auth.isVisitante()) return;
     if (confirm('¿Está seguro de que desea eliminar este lote?')) {
       this.loteService.deleteLote(id).subscribe({
         next: () => {
           this.loadLotes();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => {
           console.error('Error al eliminar lote:', err);
@@ -240,34 +251,38 @@ export class Lotes implements OnInit {
     return lote.edad_semanas + diffWeeks;
   }
   toggleLote(lote: Lote): void {
-  this.loteService.toggleActivo(lote.id_lote).subscribe({
-    next: (actualizado) => {
-      lote.fecha_fin = actualizado.fecha_fin;
-      this.cdr.detectChanges();
-    },
-    error: (err) => console.error('Error al cambiar estado del lote:', err),
-  });
-}
+    if (this.auth.isVisitante()) return;
+    this.loteService.toggleActivo(lote.id_lote).subscribe({
+      next: (actualizado) => {
+        lote.fecha_fin = actualizado.fecha_fin;
+        this.alertaService.evaluarYGenerarAlertas().subscribe();
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cambiar estado del lote:', err),
+    });
+  }
 
   // Mini modal raza
-mostrarModalRaza = false;
-nuevaRazaNombre = '';
-errorRaza: string | null = null;
+  mostrarModalRaza = false;
+  nuevaRazaNombre = '';
+  errorRaza: string | null = null;
 
-abrirModalRaza(): void {
-  this.nuevaRazaNombre = '';
-  this.errorRaza = null;
-  this.mostrarModalRaza = true;
-  this.cdr.detectChanges();
-}
+  abrirModalRaza(): void {
+    if (this.auth.isVisitante()) return;
+    this.nuevaRazaNombre = '';
+    this.errorRaza = null;
+    this.mostrarModalRaza = true;
+    this.cdr.detectChanges();
+  }
 
-cerrarModalRaza(): void {
-  this.mostrarModalRaza = false;
-  this.cdr.detectChanges();
-}
+  cerrarModalRaza(): void {
+    this.mostrarModalRaza = false;
+    this.cdr.detectChanges();
+  }
 
-guardarRazaRapida(): void {
-  this.errorRaza = null;
+  guardarRazaRapida(): void {
+    if (this.auth.isVisitante()) return;
+    this.errorRaza = null;
   this.razaService.createRaza({ nombre_raza: this.nuevaRazaNombre, activo: true }).subscribe({
     next: (nuevaRaza) => {
       this.razas.push(nuevaRaza);

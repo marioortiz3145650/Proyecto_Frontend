@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GalponService } from '../../../services/galpon.service';
@@ -6,6 +6,8 @@ import { LoteService } from '../../../services/lote';
 import { Galpon, FilterGalponParams } from '../../../interfaces/galpon.interface';
 import { Lote } from '../../../interfaces/lote.interface';
 import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
+import { AuthService } from '../../../services/auth.service';
+import { AlertaService } from '../../../services/alerta';
 
 @Component({
   selector: 'app-galpones',
@@ -17,6 +19,8 @@ import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../../in
 export class Galpones implements OnInit {
   galpones: Galpon[] = [];
   lotes: Lote[] = [];
+  auth = inject(AuthService);
+  private alertaService = inject(AlertaService);
   meta: PaginationMeta = {
     total: 0,
     page: 1,
@@ -134,6 +138,7 @@ export class Galpones implements OnInit {
 
   // Métodos CRUD
   abrirModalCrear(): void {
+    if (this.auth.isVisitante()) return;
     this.galponEditando = null;
     this.galponForm = {
       nombre: '',
@@ -145,6 +150,7 @@ export class Galpones implements OnInit {
   }
 
   abrirModalEditar(galpon: Galpon): void {
+    if (this.auth.isVisitante()) return;
     this.galponEditando = galpon;
     this.galponForm = {
       nombre: galpon.nombre,
@@ -161,37 +167,42 @@ export class Galpones implements OnInit {
   }
 
   guardarGalpon(): void {
-  const payload: any = {
-    nombre: this.galponForm.nombre,
-    direccion: this.galponForm.direccion,
-    lote: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
-  };
+    if (this.auth.isVisitante()) return;
+    const payload: any = {
+      nombre: this.galponForm.nombre,
+      direccion: this.galponForm.direccion,
+      lote: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
+    };
 
-  if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
-    this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
-      next: () => {
-        this.cerrarModal();
-        this.cargarGalpones();
-      },
-      error: (err) => console.error('Error al editar galpón:', err),
-    });
-  } else {
-    this.galponService.createGalpon(payload).subscribe({
-      next: () => {
-        this.cerrarModal();
-        this.cargarGalpones();
-      },
-      error: (err) => console.error('Error al crear galpón:', err),
-    });
+    if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
+      this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.cargarGalpones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+        },
+        error: (err) => console.error('Error al editar galpón:', err),
+      });
+    } else {
+      this.galponService.createGalpon(payload).subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.cargarGalpones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+        },
+        error: (err) => console.error('Error al crear galpón:', err),
+      });
+    }
   }
-}
 
   eliminarGalpon(id: number | undefined): void {
+    if (this.auth.isVisitante()) return;
     if (id === undefined) return;
     if (confirm('¿Está seguro de que desea eliminar este galpón?')) {
       this.galponService.deleteGalpon(id).subscribe({
         next: () => {
           this.cargarGalpones();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
         },
         error: (err) => console.error('Error al eliminar galpón:', err),
       });

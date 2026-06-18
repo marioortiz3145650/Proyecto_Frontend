@@ -58,6 +58,21 @@
         <span *ngIf="!loading">INGRESAR</span>
       </button>
 
+      <div class="divider">
+        <span>o</span>
+      </div>
+
+      <button
+        type="button"
+        class="guest-btn w-full"
+        [disabled]="guestLoading"
+        (click)="loginAsGuest()"
+      >
+        <i class="pi pi-spin pi-spinner" *ngIf="guestLoading"></i>
+        <i class="pi pi-eye mr-2" *ngIf="!guestLoading"></i>
+        <span>Ingresar como Visitante</span>
+      </button>
+
     </form>
   </div>
 </div>

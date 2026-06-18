@@ -10,15 +10,16 @@ interface LoginResponse {
 }
 
 interface JwtPayload {
-  sub: number;
+  sub: string | number;
   username: string;
+  rol: string;
   iat: number;
   exp: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API_URL = `${environment.apiUrl}`;
+  private readonly API_URL = `${environment.apiUrl}/auth`;
   private readonly TOKEN_KEY = 'access_token';
 
   private http = inject(HttpClient);
@@ -26,12 +27,19 @@ export class AuthService {
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${this.API_URL}/auth/login`, { nombre_usuario: username, password })
+      .post<LoginResponse>(`${this.API_URL}/login`, { nombre_usuario: username, password })
       .pipe(
         timeout(8000),
-        catchError(err => {
-          return throwError(() => err);
-        })
+        catchError(err => throwError(() => err))
+      );
+  }
+
+  loginAsGuest(): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(`${this.API_URL}/visitante`, {})
+      .pipe(
+        timeout(8000),
+        catchError(err => throwError(() => err))
       );
   }
 
@@ -55,15 +63,40 @@ export class AuthService {
     }
   }
 
-  getUser(): { id: number; username: string } | null {
+  getUser(): { id: string | number; username: string; rol: string } | null {
     const token = this.getToken();
     if (!token) return null;
     try {
       const payload = this.decodePayload(token);
-      return { id: payload.sub, username: payload.username };
+      return { id: payload.sub, username: payload.username, rol: payload.rol || '' };
     } catch {
       return null;
     }
+  }
+
+  getUserRole(): string {
+    const user = this.getUser();
+    return user?.rol || '';
+  }
+
+  isAdmin(): boolean {
+    return this.getUserRole() === 'Administrador';
+  }
+
+  isAprendiz(): boolean {
+    return this.getUserRole() === 'Aprendiz';
+  }
+
+  isVisitante(): boolean {
+    return this.getUserRole() === 'Visitante';
+  }
+
+  canEdit(): boolean {
+    return !this.isVisitante();
+  }
+
+  canAccessUsers(): boolean {
+    return this.isAdmin();
   }
 
   private decodePayload(token: string): JwtPayload {

@@ -1,7 +1,7 @@
 <div class="galpones-container">
   <div class="header-section">
     <h2>Galpones</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Crear Galpón
     </button>
   </div>
@@ -75,26 +75,26 @@
           </th>
           <th>Lote</th>
           <th>Fecha Creación</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let galpon of galpones">
-          <td>{{ galpon.nombre }}</td>
-          <td>{{ galpon.direccion }}</td>
-          <td>{{ galpon.lote?.id_lote || 'N/A' }}</td>
-          <td>{{ galpon.fecha_creacion | date : 'dd/MM/yyyy' }}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(galpon)">
-                <i class="pi pi-pencil"></i> Editar
-              </button>
-              <button class="btn btn-delete btn-sm" (click)="eliminarGalpon(galpon.id_galpon)">
-                <i class="pi pi-trash"></i> Borrar
-              </button>
-            </div>
-          </td>
-        </tr>
+           <th *ngIf="!auth.isVisitante()">Acciones</th>
+         </tr>
+       </thead>
+       <tbody>
+         <tr *ngFor="let galpon of galpones">
+           <td>{{ galpon.nombre }}</td>
+           <td>{{ galpon.direccion }}</td>
+           <td>{{ galpon.lote?.id_lote || 'N/A' }}</td>
+           <td>{{ galpon.fecha_creacion | date : 'dd/MM/yyyy' }}</td>
+           <td *ngIf="!auth.isVisitante()">
+             <div class="action-buttons">
+               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(galpon)">
+                 <i class="pi pi-pencil"></i> Editar
+               </button>
+               <button class="btn btn-delete btn-sm" (click)="eliminarGalpon(galpon.id_galpon)">
+                 <i class="pi pi-trash"></i> Borrar
+               </button>
+             </div>
+           </td>
+         </tr>
       </tbody>
     </table>
 

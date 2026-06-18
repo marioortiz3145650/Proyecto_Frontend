@@ -1,7 +1,7 @@
 <div class="lotes-container">
   <div class="header-section">
     <h2>Lotes</h2>
-    <button class="btn btn-primary" (click)="abrirModalCrear()">
+    <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Crear Lote
     </button>
   </div>
@@ -66,42 +66,42 @@
           <th>Estado</th>
           <th>Fecha Inicio</th>
           <th>Fecha Fin</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let lote of lotes">
-          <td>{{ lote.id_lote }}</td>
-          <td>{{ lote.raza?.nombre_raza || 'N/A' }}</td>
-          <td><strong>{{ lote.total_gallinas || 0 | number }}</strong> aves</td>
-          <td>{{ calcularEdadActual(lote) }} semanas</td>
-          <td>
-            <span [class]="lote.fecha_fin ? 'badge inactive' : 'badge active'">
-              {{ lote.fecha_fin ? 'Cerrado' : 'Activo' }}
-            </span>
-          </td>
-          <td>{{ lote.fecha_inicio | date:'dd/MM/yyyy' }}</td>
-          <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : '—' }}</td>
-          <td>
-            <div class="action-buttons">
-              <div class="toggle-switch">
-                <input
-                  type="checkbox"
-                  [id]="'toggle-lote-' + lote.id_lote"
-                  [checked]="!lote.fecha_fin"
-                  (change)="toggleLote(lote)"
-                />
-                <label [for]="'toggle-lote-' + lote.id_lote" class="toggle-slider"></label>
-              </div>
-              <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
-                <i class="pi pi-pencil"></i> Editar
-              </button>
-              <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.id_lote)">
-                <i class="pi pi-trash"></i> Borrar
-              </button>
-            </div>
-          </td>
-        </tr>
+           <th *ngIf="!auth.isVisitante()">Acciones</th>
+         </tr>
+       </thead>
+       <tbody>
+         <tr *ngFor="let lote of lotes">
+           <td>{{ lote.id_lote }}</td>
+           <td>{{ lote.raza?.nombre_raza || 'N/A' }}</td>
+           <td><strong>{{ lote.total_gallinas || 0 | number }}</strong> aves</td>
+           <td>{{ calcularEdadActual(lote) }} semanas</td>
+           <td>
+             <span [class]="lote.fecha_fin ? 'badge inactive' : 'badge active'">
+               {{ lote.fecha_fin ? 'Cerrado' : 'Activo' }}
+             </span>
+           </td>
+           <td>{{ lote.fecha_inicio | date:'dd/MM/yyyy' }}</td>
+           <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : '—' }}</td>
+           <td *ngIf="!auth.isVisitante()">
+             <div class="action-buttons">
+               <div class="toggle-switch">
+                 <input
+                   type="checkbox"
+                   [id]="'toggle-lote-' + lote.id_lote"
+                   [checked]="!lote.fecha_fin"
+                   (change)="toggleLote(lote)"
+                 />
+                 <label [for]="'toggle-lote-' + lote.id_lote" class="toggle-slider"></label>
+               </div>
+               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
+                 <i class="pi pi-pencil"></i> Editar
+               </button>
+               <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.id_lote)">
+                 <i class="pi pi-trash"></i> Borrar
+               </button>
+             </div>
+           </td>
+         </tr>
       </tbody>
     </table>
 

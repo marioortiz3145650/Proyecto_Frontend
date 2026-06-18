@@ -1,9 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../services/users';
 import { FilterUsuarioParams, Usuario } from '../../interfaces/usuario.interface';
 import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -34,6 +35,7 @@ export class UsuariosComponent implements OnInit {
   loading = false;
   error: string | null = null;
   Math = Math;
+  auth = inject(AuthService);
 
   getRolNombre(rol: any): string {
     if (!rol) return 'N/A';
