@@ -148,3 +148,73 @@ body {
   background: #fff !important;
   color: #999 !important;
 }
+
+/* ===== PRINT: ocultar navbar, sidebar, backdrop y forzar layout a full-width ===== */
+@media print {
+  /* Margen de página 0 para que el contenido llegue al borde */
+  @page {
+    margin: 15mm;
+  }
+
+  /* Ocultar navbar y sidebar COMPLETAMENTE */
+  app-navbar,
+  app-sidebar,
+  /* backdrop móvil */
+  .fixed.inset-0.bg-black\/50,
+  .fixed.inset-0.z-40,
+  [class*="z-40"],
+  [class*="z-50"] {
+    display: none !important;
+  }
+
+  /* Convertir el layout flex a bloque simple */
+  .flex.flex-col.h-screen,
+  .flex.flex-1.overflow-hidden,
+  .flex.flex-1 {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  /* El main/outlet ocupa todo sin padding */
+  main,
+  .flex-1.overflow-auto,
+  [class*="flex-1"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ===== CUBRIR header/footer del navegador (URL, fecha, título) ===== */
+  /* Estos pseudo-elementos fixed se repiten en cada página impresa y
+     tapan con blanco el texto que el navegador pone en los márgenes */
+  html::before,
+  html::after {
+    content: '';
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 13mm;
+    background: white;
+    z-index: 999999;
+    pointer-events: none;
+  }
+  html::before {
+    top: 0;
+  }
+  html::after {
+    bottom: 0;
+  }
+}
