@@ -1,0 +1,140 @@
+<div class="produccion-container" [class.flash-effect]="flashActive">
+  <div class="header-section">
+    <h2>Producción de Huevos - Detección Automática (Cámara / OCR)</h2>
+    <div class="status-indicator" [class.connected]="pythonConnected">
+      <i class="pi" [class.pi-check-circle]="pythonConnected" [class.pi-exclamation-triangle]="!pythonConnected"></i>
+      <span>{{ pythonConnected ? 'Cámara Conectada' : 'Desconectado' }}</span>
+    </div>
+  </div>
+
+  <!-- Formulario de Configuración de la Recolección -->
+  <div class="config-card">
+    <h3>Configuración de Recolección</h3>
+    <div class="config-grid">
+      <div class="config-field">
+        <label for="formLote">Lote Destino</label>
+        <select id="formLote" [(ngModel)]="selectedLoteId" required>
+          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+        </select>
+      </div>
+
+      <div class="config-field">
+        <label for="formFecha">Fecha de Registro</label>
+        <input type="date" id="formFecha" [(ngModel)]="selectedFecha" required />
+      </div>
+
+      <div class="config-field">
+        <label for="selectCamara">Cámara Web</label>
+        <select id="selectCamara" [(ngModel)]="selectedCameraIndex" (change)="cambiarCamara()">
+          <option *ngFor="let cam of availableCameras" [value]="cam.index">
+            {{ cam.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="config-field">
+        <label>Responsable</label>
+        <input type="text" [value]="activeUserNombre" disabled class="disabled-input" />
+      </div>
+    </div>
+  </div>
+
+  <div class="main-dashboard-grid">
+    <!-- Panel Izquierdo: Cámara de Video -->
+    <div class="panel-card video-card">
+      <div class="panel-header">
+        <h3><i class="pi pi-video"></i> Flujo de la Cámara</h3>
+      </div>
+      <div class="video-wrapper">
+        <img *ngIf="pythonConnected" [src]="videoFeedUrl" alt="Video de la Cámara" class="video-feed" />
+        <div *ngIf="!pythonConnected" class="video-offline">
+          <i class="pi pi-sync pi-spin offline-icon"></i>
+          <h4>Iniciando Detector de Peso...</h4>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Panel Derecho: Resumen de la Sesión -->
+    <div class="panel-card results-card counters-card">
+      <div class="panel-header">
+        <h3><i class="pi pi-chart-bar"></i> Resumen de la Sesión</h3>
+      </div>
+      
+      <div class="counters-grid">
+        <div class="counter-item jumbo">
+          <span class="count-badge">Jumbo</span>
+          <span class="count-value">{{ sessionCounts['jumbo'] }}</span>
+          <span class="weight-range">> 78g</span>
+        </div>
+        <div class="counter-item aaa">
+          <span class="count-badge">AAA</span>
+          <span class="count-value">{{ sessionCounts['aaa'] }}</span>
+          <span class="weight-range">67g - 78g</span>
+        </div>
+        <div class="counter-item aa">
+          <span class="count-badge">AA</span>
+          <span class="count-value">{{ sessionCounts['aa'] }}</span>
+          <span class="weight-range">60g - 67g</span>
+        </div>
+        <div class="counter-item a">
+          <span class="count-badge">A</span>
+          <span class="count-value">{{ sessionCounts['a'] }}</span>
+          <span class="weight-range">53g - 60g</span>
+        </div>
+        <div class="counter-item b">
+          <span class="count-badge">B</span>
+          <span class="count-value">{{ sessionCounts['b'] }}</span>
+          <span class="weight-range">46g - 53g</span>
+        </div>
+        <div class="counter-item c">
+          <span class="count-badge">C</span>
+          <span class="count-value">{{ sessionCounts['c'] }}</span>
+          <span class="weight-range">&lt; 46g</span>
+        </div>
+      </div>
+
+      <div class="total-session-summary">
+        <span>Total Escaneado en Sesión:</span>
+        <strong>{{ totalSessionEggs }} Huevos</strong>
+      </div>
+
+      <div class="db-actions-row">
+        <button class="btn btn-success btn-save" 
+                (click)="guardarProduccionEnBaseDatos()" 
+                [disabled]="totalSessionEggs === 0 || loading || auth.isVisitante()">
+          <i class="pi pi-save"></i> 
+          {{ loading ? 'Guardando...' : 'Guardar Producción' }}
+        </button>
+        <button class="btn btn-outline-danger btn-reset" 
+                (click)="reiniciarSesion()" 
+                [disabled]="totalSessionEggs === 0">
+          <i class="pi pi-refresh"></i> Reiniciar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atajos de Teclado (Controles en Tiempo Real) en la parte inferior, ocupando todo el ancho -->
+  <div class="keyboard-legend-card" *ngIf="pythonConnected">
+    <h3><i class="pi pi-keyboard"></i> Atajos de Teclado (Controles en Tiempo Real)</h3>
+    <div class="legend-grid-horizontal">
+      <div class="legend-item">
+        <span class="key-badge">ESPACIO</span>
+        <span class="legend-desc">Registrar peso en la sesión</span>
+      </div>
+      <div class="legend-item">
+        <span class="key-badge">W = ↑ / S = ↓</span>
+        <span class="legend-desc">Mover recuadro (ROI) arriba / abajo</span>
+      </div>
+      <div class="legend-item">
+        <span class="key-badge">A = ← / D = →</span>
+        <span class="legend-desc">Mover recuadro (ROI) izquierda / derecha</span>
+      </div>
+      <div class="legend-item">
+        <span class="key-badge">Q</span>
+        <span class="legend-desc">Apagar cámara / Detener detector</span>
+      </div>
+    </div>
+  </div>
+</div>

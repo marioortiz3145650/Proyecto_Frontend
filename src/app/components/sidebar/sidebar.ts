@@ -81,7 +81,14 @@ export class SidebarComponent implements OnInit {
         { label: 'Galpones', icon: 'pi pi-box', route: '/gallinas/galpones' }
       ]
     },
-    { label: 'Producción', icon: 'pi pi-chart-line', route: '/produccion' },
+    {
+      label: 'Producción',
+      icon: 'pi pi-chart-line',
+      children: [
+        { label: 'Manual', icon: 'pi pi-pencil', route: '/produccion/manual' },
+        { label: 'Automática', icon: 'pi pi-camera', route: '/produccion/automatica' }
+      ]
+    },
     {
       label: 'Alimentación',
       icon: 'pi pi-shopping-cart',

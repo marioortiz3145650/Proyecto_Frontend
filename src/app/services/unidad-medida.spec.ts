@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { UnidadMedida } from './unidad-medida';
+import { UnidadMedidaService } from './unidad-medida';
 
-describe('UnidadMedida', () => {
-  let service: UnidadMedida;
+describe('UnidadMedidaService', () => {
+  let service: UnidadMedidaService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(UnidadMedida);
+    service = TestBed.inject(UnidadMedidaService);
   });
 
   it('should be created', () => {

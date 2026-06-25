@@ -5,6 +5,7 @@ import { LoteService } from '../../services/lote';
 import { ProduccionService } from '../../services/produccion';
 import { AlimentoService } from '../../services/alimento';
 import { MuerteService } from '../../services/muerte';
+import { AlertaService } from '../../services/alerta';
 import { Lote } from '../../interfaces/lote.interface';
 import { Produccion } from '../../interfaces/produccion.interface';
 import { Alimento } from '../../interfaces/alimento.interface';
@@ -23,6 +24,7 @@ export class Dashboard implements OnInit {
   totalLotesCerrados = 0;
   totalGallinas = 0;
   totalGalpones = 0;
+  totalAlertas = 0;
 
   // Producción
   produccionReciente: Produccion[] = [];
@@ -46,6 +48,7 @@ export class Dashboard implements OnInit {
     private produccionService: ProduccionService,
     private alimentoService: AlimentoService,
     private muerteService: MuerteService,
+    private alertaService: AlertaService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -55,6 +58,17 @@ export class Dashboard implements OnInit {
 
   cargarDatos(): void {
     this.loading = true;
+
+    this.alertaService.getAlertas({ page: 1, limit: 1 }).subscribe({
+      next: (res) => {
+        this.totalAlertas = res.meta?.total || 0;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.totalAlertas = 0;
+        this.cdr.detectChanges();
+      }
+    });
 
     this.loteService.getLotes({ page: 1, limit: 100 }).subscribe({
       next: (res) => {
