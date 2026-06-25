@@ -32,8 +32,8 @@ export class Lotes implements OnInit {
 
   page = 1;
   limit = 5;
-  sortBy = 'fecha_creacion';
-  sortOrder: 'ASC' | 'DESC' = 'DESC';
+  sortBy = 'id_lote';
+  sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterLoteParams = {};
   pages: number[] = [];

@@ -30,7 +30,7 @@ export class Alertas implements OnInit {
   page = 1;
   limit = 5;
   sortBy = 'id_alerta';
-  sortOrder: 'ASC' | 'DESC' = 'DESC';
+  sortOrder: 'ASC' | 'DESC' = 'ASC';
   pages: number[] = [];
 
   loading = false;

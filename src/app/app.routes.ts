@@ -8,7 +8,8 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Lotes } from './pages/gallinas/lotes/lotes';
 import { Galpones } from './pages/gallinas/galpones/galpones';
 import { Razas } from './pages/gallinas/razas/razas';
-import { ProduccionPage } from './pages/produccion/produccion';
+import { ProduccionManualComponent } from './pages/produccion/manual/produccion-manual';
+import { ProduccionAutomaticaComponent } from './pages/produccion/automatica/produccion-automatica';
 import { Alimentos } from './pages/alimentacion/alimentos/alimentos';
 import { Consumo } from './pages/alimentacion/consumo/consumo';
 import { Salud } from './pages/salud/salud';
@@ -34,7 +35,9 @@ export const routes: Routes = [
       { path: 'gallinas/lotes', component: Lotes },
       { path: 'gallinas/galpones', component: Galpones },
       { path: 'gallinas/razas', component: Razas },
-      { path: 'produccion', component: ProduccionPage },
+      { path: 'produccion', redirectTo: 'produccion/manual', pathMatch: 'full' },
+      { path: 'produccion/manual', component: ProduccionManualComponent },
+      { path: 'produccion/automatica', component: ProduccionAutomaticaComponent },
       { path: 'alimentacion/alimentos', component: Alimentos },
       { path: 'alimentacion/consumo', component: Consumo },
       { path: 'salud', component: Salud },

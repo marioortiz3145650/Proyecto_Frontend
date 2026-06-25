@@ -54,12 +54,12 @@ h2 {
 .items-per-page select,
 .form-field input,
 .form-field select {
-  padding: 8px 2px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   color: black;
-  background-color: #D4D4D4;
+  background-color: #f8f9fa;
 }
 
 .filter-field input:focus,
@@ -179,12 +179,12 @@ h2 {
 }
 
 .btn-secondary {
-  background-color: #f50f45;
+  background-color: #6c757d;
   color: #fff;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #9d1325;
+  background-color: #5c636a;
 }
 
 .btn-sm {
@@ -372,16 +372,6 @@ h2 {
   .filter-actions {
     justify-content: center;
   }
-  .action-buttons-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
 
   .modal-card {
     max-width: 90%;

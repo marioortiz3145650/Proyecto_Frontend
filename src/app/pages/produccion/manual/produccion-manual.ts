@@ -1,24 +1,24 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProduccionService } from '../../services/produccion';
-import { LoteService } from '../../services/lote';
-import { UsersService } from '../../services/users';
-import { Produccion, FilterProduccionParams } from '../../interfaces/produccion.interface';
-import { Lote } from '../../interfaces/lote.interface';
-import { Usuario } from '../../interfaces/usuario.interface';
-import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
-import { AuthService } from '../../services/auth.service';
-import { AlertaService } from '../../services/alerta';
+import { ProduccionService } from '../../../services/produccion';
+import { LoteService } from '../../../services/lote';
+import { UsersService } from '../../../services/users';
+import { Produccion, FilterProduccionParams } from '../../../interfaces/produccion.interface';
+import { Lote } from '../../../interfaces/lote.interface';
+import { Usuario } from '../../../interfaces/usuario.interface';
+import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
+import { AuthService } from '../../../services/auth.service';
+import { AlertaService } from '../../../services/alerta';
 
 @Component({
-  selector: 'app-produccion',
+  selector: 'app-produccion-manual',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './produccion.html',
-  styleUrl: './produccion.css',
+  templateUrl: './produccion-manual.html',
+  styleUrl: './produccion-manual.css',
 })
-export class ProduccionPage implements OnInit {
+export class ProduccionManualComponent implements OnInit {
   producciones: Produccion[] = [];
   lotes: Lote[] = [];
   usuarios: Usuario[] = [];
@@ -38,7 +38,7 @@ export class ProduccionPage implements OnInit {
   page = 1;
   limit = 5;
   sortBy = 'fecha';
-  sortOrder: 'ASC' | 'DESC' = 'DESC';
+  sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterProduccionParams = {};
   pages: number[] = [];
@@ -286,8 +286,6 @@ export class ProduccionPage implements OnInit {
       lote_id: Number(this.produccionForm.lote_id),
     };
 
-    // Al crear un nuevo registro, enviamos el creado_por (usuario logueado)
-    // Al editar, NO lo enviamos en el payload para no sobreescribir el creador original
     if (!this.produccionEditando) {
       payload.creado_por = defaultCreator?.id;
     }
