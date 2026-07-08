@@ -31,7 +31,7 @@ export class MuerteService {
     return this.http.get<PaginatedResponse<Muerte>>(this.apiUrl, { params: httpParams });
   }
 
-  getMuerte(id: number): Observable<Muerte> {
+  getMuerte(id: string): Observable<Muerte> {
     return this.http.get<Muerte>(`${this.apiUrl}/${id}`);
   }
 
@@ -40,22 +40,22 @@ export class MuerteService {
     cantidad: number;
     causa: string;
     usuarioId: string;
-    loteId: number;
+    loteId: string;
   }): Observable<Muerte> {
     return this.http.post<Muerte>(this.apiUrl, muerte);
   }
 
-  updateMuerte(id: number, muerte: {
+  updateMuerte(id: string, muerte: {
     fecha?: string | Date;
     cantidad?: number;
     causa?: string;
     usuarioId?: string;
-    loteId?: number;
+    loteId?: string;
   }): Observable<Muerte> {
     return this.http.patch<Muerte>(`${this.apiUrl}/${id}`, muerte);
   }
 
-  deleteMuerte(id: number): Observable<any> {
+  deleteMuerte(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

@@ -20,7 +20,7 @@ export class RazaService {
     return this.http.get<Raza[]>(this.apiUrl);
   }
 
-  getRaza(id: number): Observable<Raza> {
+  getRaza(id: string): Observable<Raza> {
     return this.http.get<Raza>(`${this.apiUrl}/${id}`);
   }
 
@@ -28,15 +28,15 @@ export class RazaService {
     return this.http.post<Raza>(this.apiUrl, raza);
   }
 
-  updateRaza(id: number, raza: Partial<Raza>): Observable<Raza> {
+  updateRaza(id: string, raza: Partial<Raza>): Observable<Raza> {
     return this.http.patch<Raza>(`${this.apiUrl}/${id}`, raza);
   }
 
-  deleteRaza(id: number): Observable<any> {
+  deleteRaza(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
-  restoreRaza(id: number): Observable<any> {
+  restoreRaza(id: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${id}/restore`, {});
   }
 }

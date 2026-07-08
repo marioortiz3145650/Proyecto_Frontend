@@ -1,6 +1,6 @@
 <div class="consumo-container">
   <div class="header-section">
-    <h2>Consumo e Insumos</h2>
+    <h2>Consumo de Alimentos</h2>
     <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrear()">
       <i class="pi pi-plus mr-2"></i>Registrar Consumo
     </button>
@@ -9,63 +9,78 @@
   <!-- Filtros -->
   <div class="filters-card">
     <h3>Filtros</h3>
-    <div class="filters-grid">
+    <div class="filters-row">
+      <div class="filters-grid">
       <div class="filter-field">
         <label for="filtroLote">Lote</label>
-        <select id="filtroLote" [(ngModel)]="filtroLoteId">
-          <option [ngValue]="undefined">Todos los lotes</option>
-          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote #{{ lote.id_lote }}</option>
+        <select id="filtroLote" [(ngModel)]="filtroLoteId" (ngModelChange)="page = 1">
+          <option [ngValue]="undefined">Todos</option>
+          <option *ngFor="let lote of lotes" [value]="lote.uuid">Lote #{{ lote.id_lote }}</option>
         </select>
       </div>
 
       <div class="filter-field">
         <label for="filtroInsumo">Alimento / Insumo</label>
-        <select id="filtroInsumo" [(ngModel)]="filtroInsumoId">
-          <option [ngValue]="undefined">Todos los alimentos</option>
-          <option *ngFor="let alim of alimentos" [value]="alim.id_insumo">{{ alim.nombre }}</option>
+        <select id="filtroInsumo" [(ngModel)]="filtroInsumoId" (ngModelChange)="page = 1">
+          <option [ngValue]="undefined">Todos</option>
+          <option *ngFor="let alim of alimentos" [value]="alim.uuid">{{ alim.nombre }}</option>
         </select>
       </div>
 
       <div class="filter-actions">
         <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
       </div>
+      </div>
+
+      <div class="limit-field">
+        <label for="limitSelect">Items por página</label>
+        <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="onLimitChange(limit)">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">Cargando registros de consumo...</div>
+  <div *ngIf="loading" class="loading">Cargando movimientos de consumo...</div>
+
   <div *ngIf="error" class="error">{{ error }}</div>
 
   <!-- Tabla de resultados -->
-  <div class="table-container" *ngIf="!loading && !error">
+  <div class="table-container" *ngIf="!loading">
     <table class="table">
       <thead>
         <tr>
           <th>ID</th>
           <th>Fecha</th>
-          <th>Lote</th>
           <th>Alimento</th>
-          <th>Cantidad Consumida</th>
-          <th>Tipo Movimiento</th>
-          <th>Registrado Por</th>
+          <th>Lote</th>
+          <th>Cantidad</th>
+          <th>Tipo</th>
+          <th>Creado por</th>
+          <th>Observaciones</th>
           <th *ngIf="!auth.isVisitante()">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let mov of movimientosFiltrados">
-          <td>{{ mov.id_movimiento }}</td>
-          <td>{{ mov.fecha | date:'dd/MM/yyyy' }}</td>
-          <td><strong>Lote #{{ mov.lote?.id_lote || 'N/A' }}</strong></td>
-          <td>{{ mov.alimento?.nombre || 'N/A' }}</td>
-          <td>{{ mov.cantidad | number:'1.2-2' }}</td>
+        <tr *ngFor="let m of movimientosPaginados">
+          <td>{{ m.id_movimiento }}</td>
+          <td>{{ m.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ m.alimento?.nombre || 'N/A' }}</td>
+          <td>{{ m.lote ? ('Lote #' + m.lote.id_lote) : 'N/A' }}</td>
+          <td>{{ m.cantidad | number: '1.2-2' }}</td>
           <td>
-            <span class="badge" [class.active]="mov.tipo_movimiento === 'CONSUMO'" [class.warning-badge]="mov.tipo_movimiento === 'SALIDA'">
-              {{ mov.tipo_movimiento === 'SALIDA' ? 'AJUSTE / DESCARTE' : mov.tipo_movimiento }}
+            <span class="badge" [class.active]="m.tipo_movimiento === 'CONSUMO'"
+              [class.warning-badge]="m.tipo_movimiento !== 'CONSUMO'">
+              {{ m.tipo_movimiento }}
             </span>
           </td>
-          <td>{{ getUsuarioDisplayName(mov.creado_por) }}</td>
+          <td>{{ getUsuarioDisplayName(m.creado_por) }}</td>
+          <td>{{ m.observaciones || '-' }}</td>
           <td *ngIf="!auth.isVisitante()">
             <div class="action-buttons">
-              <button class="btn btn-delete btn-sm" (click)="eliminarMovimiento(mov.id_movimiento)">
+              <button class="btn btn-delete btn-sm" (click)="eliminarMovimiento(m.uuid)">
                 <i class="pi pi-trash"></i> Eliminar
               </button>
             </div>
@@ -75,71 +90,68 @@
     </table>
 
     <div *ngIf="movimientosFiltrados.length === 0" class="empty">
-      No hay consumos registrados para los filtros seleccionados.
+      No hay movimientos de consumo registrados.
     </div>
   </div>
 
-  <!-- Modal overlay de Consumo -->
+  <!-- Paginación -->
+  <div class="pagination-container" *ngIf="!loading && movimientosFiltrados.length > 0">
+    <app-pagination
+      [totalPages]="totalPages"
+      [currentPage]="page"
+      (pageChange)="changePage($event)"
+    ></app-pagination>
+  </div>
+
+  <!-- Modal de registro de consumo -->
   <div class="modal-overlay" *ngIf="mostrarModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Registrar Consumo / Movimiento</h3>
+        <h3>Registrar Consumo de Alimento</h3>
         <button class="close-btn" (click)="cerrarModal()">&times;</button>
       </div>
       <form (ngSubmit)="guardarMovimiento()" #movFormRef="ngForm">
         <div class="modal-body">
-          <div class="form-field">
-            <label for="formFecha">Fecha de Consumo</label>
-            <input
-              type="date"
-              id="formFecha"
-              name="fecha"
-              [(ngModel)]="movimientoForm.fecha"
-              required
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="formLote">Lote Asociado</label>
-            <select id="formLote" name="lote_id" [(ngModel)]="movimientoForm.lote_id" required>
-              <option [value]="undefined" disabled>Seleccione un lote</option>
-              <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote #{{ lote.id_lote }}</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="formInsumo">Alimento / Insumo</label>
-            <select id="formInsumo" name="insumo_id" [(ngModel)]="movimientoForm.insumo_id" required>
-              <option [value]="undefined" disabled>Seleccione un alimento</option>
-              <option *ngFor="let alim of alimentos" [value]="alim.id_insumo">{{ alim.nombre }} (Stock: {{ alim.stock_actual }})</option>
-            </select>
-          </div>
-
           <div class="form-grid-two">
             <div class="form-field">
-              <label for="formCantidad">Cantidad Consumida</label>
+              <label for="formFecha">Fecha</label>
+              <input type="date" id="formFecha" name="fecha" [(ngModel)]="movimientoForm.fecha" required />
+            </div>
+
+            <div class="form-field">
+              <label for="formCantidad">Cantidad</label>
               <input
                 type="number"
                 id="formCantidad"
                 name="cantidad"
                 [(ngModel)]="movimientoForm.cantidad"
                 required
-                min="0.01"
+                min="0"
                 step="0.01"
               />
-            </div>
-
-            <div class="form-field">
-              <label for="formTipoMov">Tipo de Movimiento</label>
-              <select id="formTipoMov" name="tipo_movimiento" [(ngModel)]="movimientoForm.tipo_movimiento" required>
-                <option value="CONSUMO">CONSUMO</option>
-                <option value="SALIDA">AJUSTE / DESCARTE</option>
-              </select>
             </div>
           </div>
 
           <div class="form-field">
-            <label>Registrado Por</label>
+            <label for="formInsumo">Alimento / Insumo</label>
+            <select id="formInsumo" name="insumo_id" [(ngModel)]="movimientoForm.insumo_id" required>
+              <option [value]="undefined" disabled>Seleccione un insumo</option>
+              <option *ngFor="let alim of alimentosConStock" [value]="alim.uuid">
+                {{ alim.nombre }} (stock: {{ alim.stock_actual }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="formLote">Lote</label>
+            <select id="formLote" name="lote_id" [(ngModel)]="movimientoForm.lote_id" required>
+              <option [value]="undefined" disabled>Seleccione un lote</option>
+              <option *ngFor="let lote of lotes" [value]="lote.uuid">Lote #{{ lote.id_lote }}</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Registrado por</label>
             <input
               type="text"
               [value]="activeUserNombre"
@@ -147,12 +159,22 @@
               style="background-color: #e9ecef; cursor: not-allowed; border: 1px solid #ced4da; padding: 0.375rem 0.75rem; border-radius: 0.25rem; width: 100%;"
             />
           </div>
+
+          <div class="form-field">
+            <label for="formObservaciones">Observaciones</label>
+            <input
+              type="text"
+              id="formObservaciones"
+              name="observaciones"
+              [(ngModel)]="movimientoForm.observaciones"
+              placeholder="Opcional"
+            />
+          </div>
         </div>
-        
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="!movFormRef.form.valid || guardando">
-            Guardar
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </form>

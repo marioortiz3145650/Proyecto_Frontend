@@ -4,26 +4,27 @@ import { ButtonModule } from 'primeng/button';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AlertaService } from '../../services/alerta';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, ButtonModule],
   template: `
-    <nav class="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+    <nav class="shadow-md px-4 py-3 text-white" style="background-color: #2e6f40; border-bottom: 1px solid #245732;">
       <div class="flex items-center justify-between">
         <div class="flex items-center">
           <button
             (click)="toggleSidebar.emit()"
-            class="md:hidden p-2 mr-2 text-gray-600 hover:text-gray-900 focus:outline-none bg-transparent border-0 cursor-pointer">
+            class="md:hidden p-2 mr-2 text-white hover:text-green-100 focus:outline-none bg-transparent border-0 cursor-pointer">
             <i class="pi pi-bars text-xl"></i>
           </button>
-          <span class="text-xl font-bold text-gray-800">Laying Hens</span>
+          <span class="text-xl font-bold text-white">Laying Hens</span>
         </div>
         <div class="flex items-center space-x-4 relative">
           <button
             (click)="irAAlertas()"
-            class="p-2 text-gray-600 hover:text-gray-900 focus:outline-none bg-transparent border-0 cursor-pointer relative flex items-center">
+            class="p-2 text-white hover:text-green-100 focus:outline-none bg-transparent border-0 cursor-pointer relative flex items-center">
             <i class="pi pi-bell text-xl"></i>
             <span
               *ngIf="alertasCount > 0"
@@ -35,7 +36,8 @@ import { AlertaService } from '../../services/alerta';
             pButton
             type="button"
             icon="pi pi-user"
-            class="p-button-rounded p-button-text"
+            class="p-button-rounded p-button-text text-white hover:bg-[#245732]"
+            style="color: white !important;"
             [label]="userName"
             (click)="toggleUserMenu()">
           </button>
@@ -61,9 +63,13 @@ import { AlertaService } from '../../services/alerta';
               </span>
             </div>
             <div class="border-t border-gray-100 pt-3 space-y-1">
-              <div class="flex items-center gap-2 text-xs text-gray-500 px-1">
+              <div class="flex items-center gap-2 text-xs text-gray-500 px-1" *ngIf="userNombre">
                 <i class="pi pi-id-card"></i>
-                <span>ID: {{ userId }}</span>
+                <span>Nombre: {{ userNombre }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500 px-1" *ngIf="userCorreo">
+                <i class="pi pi-envelope"></i>
+                <span>Correo: {{ userCorreo }}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-500 px-1" *ngIf="userName">
                 <i class="pi pi-user"></i>
@@ -92,6 +98,8 @@ export class NavbarComponent implements OnInit {
   userName = '';
   userRole = '';
   userId: number | string = '';
+  userNombre = '';
+  userCorreo = '';
   showUserMenu = false;
   alertasCount = 0;
 
@@ -102,6 +110,7 @@ export class NavbarComponent implements OnInit {
   private alertaService = inject(AlertaService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
+  private toast = inject(ToastService);
 
   ngOnInit(): void {
     const user = this.auth.getUser();
@@ -109,6 +118,8 @@ export class NavbarComponent implements OnInit {
       this.userName = user.username;
       this.userRole = user.rol || 'Usuario';
       this.userId = user.id;
+      this.userNombre = user.nombre || '';
+      this.userCorreo = user.correo || '';
     }
     this.cargarAlertasCount();
     this.alertaService.refreshCount$.subscribe(() => {
@@ -127,6 +138,7 @@ cargarAlertasCount(): void {
       },
       error: () => {
         this.ngZone.run(() => {
+          this.toast.error('No se pudo cargar el contador de alertas.', 'Error');
           this.alertasCount = 0;
           setTimeout(() => this.cdr.detectChanges(), 0);
         });

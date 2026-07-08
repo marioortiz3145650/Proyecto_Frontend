@@ -1,9 +1,12 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { Observable, timeout, catchError, throwError } from 'rxjs';
+import { timeout, catchError, throwError } from 'rxjs';
+import { inject } from '@angular/core';
+import { MessageService } from 'primeng/api';
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('access_token');
-  
+  const toast = inject(MessageService);
+
   if (token) {
     const cloned = req.clone({
       setHeaders: {
@@ -15,6 +18,12 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
       catchError(err => {
         if (err.status === 401) {
           localStorage.removeItem('access_token');
+          toast.add({
+            severity: 'warn',
+            summary: 'Sesión expirada',
+            detail: 'Tu sesión expiró. Redirigiendo al login...',
+            life: 4000
+          });
         }
         return throwError(() => err);
       })

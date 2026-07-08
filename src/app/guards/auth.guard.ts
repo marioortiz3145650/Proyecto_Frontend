@@ -36,20 +36,6 @@ export const roleGuard: CanActivateFn = () => {
  * Guard that only allows Administrador to access usuarios routes.
  * Visitante and Aprendiz are redirected to dashboard.
  */
-export const usuariosGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-
-  if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login']);
-  }
-
-  return true;
-};
-
-/**
- * Guard that only allows Administrador.
- */
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);

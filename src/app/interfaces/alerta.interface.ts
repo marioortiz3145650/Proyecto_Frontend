@@ -10,11 +10,11 @@ export interface Alerta {
   prioridad: string; // 'alta', 'media', 'baja'
   leida: boolean;
   fecha_creacion: string | Date;
-  lote_id?: number;
+  lote_id?: string;
   lote?: Lote;
-  galpon_id?: number;
+  galpon_id?: string;
   galpon?: Galpon;
-  inquilino_id?: string;
+  uuid?: string;
 }
 
 export interface FilterAlertaParams {

@@ -12,11 +12,14 @@ import { Usuario } from '../../interfaces/usuario.interface';
 import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
 import { AuthService } from '../../services/auth.service';
 import { AlertaService } from '../../services/alerta';
+import { ToastService } from '../../services/toast.service';
+import { DialogService } from '../../services/dialog.service';
+import { PaginationComponent } from '../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-salud',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './salud.html',
   styleUrl: './salud.css',
 })
@@ -48,7 +51,6 @@ export class Salud implements OnInit {
   sortBy = 'fecha';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
   filtros: FilterMuerteParams = {};
-  pages: number[] = [];
 
   // Estados generales
   loading = true; // Empieza en true para evitar ExpressionChangedAfterItHasBeenCheckedError
@@ -64,7 +66,7 @@ export class Salud implements OnInit {
     fecha: '',
     cantidad: 1,
     causa: '',
-    loteId: undefined as number | undefined,
+    loteId: undefined as string | undefined,
     usuarioId: undefined as string | undefined,
   };
 
@@ -74,9 +76,8 @@ export class Salud implements OnInit {
   tratamientoForm = {
     fecha: '',
     tratamiento: '',
-    lote_id: undefined as number | undefined,
-    estado_id: 1,
-    creado_por: 1,
+    lote_id: undefined as string | undefined,
+    creado_por: undefined as string | undefined,
   };
 
   guardando = false;
@@ -86,7 +87,9 @@ export class Salud implements OnInit {
     private loteService: LoteService,
     private usersService: UsersService,
     private tratamientoService: TratamientoService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -102,26 +105,26 @@ export class Salud implements OnInit {
 
     forkJoin({
       lotes: this.loteService.getLotes({ limit: 100 }),
-      usuarios: this.usersService.getUsers({ limit: 100 }),
+      usuarios: this.usersService.getActiveUsers(),
       muertes: this.muerteService.getMuertes(muertesParams),
       tratamientos: this.tratamientoService.getTratamientos()
     }).subscribe({
       next: (res) => {
         this.lotes = res.lotes.data || [];
-        this.usuarios = res.usuarios.data || [];
+        this.usuarios = res.usuarios || [];
         this.usuariosAutorizados = this.usuarios.filter(u => {
           const rolNombre = this.getRolName(u.rol);
           return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
         });
         this.muertes = res.muertes.data || [];
         this.meta = res.muertes.meta;
-        this.generatePages();
         this.tratamientos = res.tratamientos || [];
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al inicializar modulo de salud:', err);
+        this.toast.error('No se pudo cargar el módulo de salud.', 'Error de carga');
         this.error = 'Error al cargar información de salud';
         this.loading = false;
         this.cdr.detectChanges();
@@ -149,9 +152,9 @@ export class Salud implements OnInit {
   }
 
   loadUsuarios(): void {
-    this.usersService.getUsers({ limit: 100 }).subscribe({
-      next: (response) => {
-        this.usuarios = response.data;
+    this.usersService.getActiveUsers().subscribe({
+      next: (usuarios) => {
+        this.usuarios = usuarios;
         this.usuariosAutorizados = this.usuarios.filter(u => {
           const rolNombre = this.getRolName(u.rol);
           return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
@@ -186,7 +189,6 @@ export class Salud implements OnInit {
       next: (response) => {
         this.muertes = response.data;
         this.meta = response.meta;
-        this.generatePages();
         this.loadingMuertes = false;
         setTimeout(() => this.cdr.detectChanges());
       },
@@ -225,22 +227,17 @@ export class Salud implements OnInit {
     this.loadMuertes();
   }
 
-  changeLimit(): void {
-    this.page = 1;
-    this.loadMuertes();
-  }
-
-  abrirModalCrearMuerte(): void {
+ abrirModalCrearMuerte(): void {
     if (this.auth.isVisitante()) return;
     this.muerteEditando = null;
     const activeUser = this.auth.getUser();
-    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.uuid) === String(activeUser?.id)) || this.usuariosAutorizados[0];
     this.muerteForm = {
       fecha: new Date().toISOString().substring(0, 10),
       cantidad: 1,
       causa: '',
-      loteId: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      usuarioId: defaultCreator?.id,
+      loteId: this.lotes.length > 0 ? this.lotes[0].uuid : undefined,
+      usuarioId: defaultCreator?.uuid,
     };
     this.mostrarModalMuerte = true;
     this.cdr.detectChanges();
@@ -249,12 +246,12 @@ export class Salud implements OnInit {
   abrirModalEditarMuerte(muerte: Muerte): void {
     if (this.auth.isVisitante()) return;
     this.muerteEditando = muerte;
-    const creatorId = muerte.usuario?.id || (this.auth.getUser()?.id ? String(this.auth.getUser()?.id) : undefined);
+    const creatorId = muerte.usuario?.uuid || (this.auth.getUser()?.id ? String(this.auth.getUser()?.id) : undefined);
     this.muerteForm = {
       fecha: muerte.fecha ? new Date(muerte.fecha).toISOString().substring(0, 10) : '',
       cantidad: muerte.cantidad,
       causa: muerte.causa,
-      loteId: muerte.lote?.id_lote,
+      loteId: muerte.lote?.uuid,
       usuarioId: creatorId,
     };
     this.mostrarModalMuerte = true;
@@ -264,7 +261,7 @@ export class Salud implements OnInit {
   get activeUserNombre(): string {
     const user = this.auth.getUser();
     if (!user) return 'Desconocido';
-    const fullUser = this.usuariosAutorizados.find(u => String(u.id) === String(user.id));
+    const fullUser = this.usuariosAutorizados.find(u => String(u.uuid) === String(user.id));
     if (fullUser?.nombre) return fullUser.nombre;
     return user.username.toLowerCase() === 'admin' ? 'Administrador Sistema' : user.username;
   }
@@ -286,7 +283,7 @@ export class Salud implements OnInit {
       fecha: this.muerteForm.fecha,
       cantidad: Number(this.muerteForm.cantidad),
       causa: this.muerteForm.causa,
-      loteId: Number(this.muerteForm.loteId),
+      loteId: this.muerteForm.loteId,
     };
 
     // Al crear enviamos usuarioId del usuario activo, al editar no lo enviamos para no sobrescribir el creador original
@@ -296,13 +293,19 @@ export class Salud implements OnInit {
     }
 
     if (this.muerteEditando) {
-      this.muerteService.updateMuerte(this.muerteEditando.id_muerte, payload).subscribe({
+      this.muerteService.updateMuerte(this.muerteEditando.uuid!, payload).subscribe({
         next: () => {
           this.cerrarModalMuerte();
           this.loadMuertes();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Registro de mortalidad actualizado correctamente.');
         },
-        error: () => { this.error = 'Error al actualizar registro de muerte'; this.guardando = false; this.cdr.detectChanges(); },
+        error: () => {
+          this.toast.error('No se pudo actualizar el registro de mortalidad.');
+          this.error = 'Error al actualizar registro de muerte';
+          this.guardando = false;
+          this.cdr.detectChanges();
+        },
       });
     } else {
       this.muerteService.createMuerte(payload).subscribe({
@@ -310,28 +313,44 @@ export class Salud implements OnInit {
           this.cerrarModalMuerte();
           this.loadMuertes();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
-        },
-        error: () => { this.error = 'Error al registrar muerte'; this.guardando = false; this.cdr.detectChanges(); },
-      });
-    }
-  }
-
-  eliminarMuerte(id: number): void {
-    if (this.auth.isVisitante()) return;
-    const muerte = this.muertes.find(m => m.id_muerte === id);
-    const cantidad = muerte?.cantidad || 0;
-    if (confirm(`¿Está seguro de que desea eliminar este registro de ${cantidad} baja(s)?\n\n⚠️ Las ${cantidad} gallina(s) VOLVERÁN a sumarse al lote #${muerte?.lote?.id_lote || 'desconocido'}.`)) {
-      this.muerteService.deleteMuerte(id).subscribe({
-        next: () => {
-          this.loadMuertes();
-          this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Mortalidad registrada correctamente.');
         },
         error: () => {
-          this.error = 'Error al eliminar registro';
+          this.toast.error('No se pudo registrar la mortalidad.');
+          this.error = 'Error al registrar muerte';
+          this.guardando = false;
           this.cdr.detectChanges();
         },
       });
     }
+  }
+
+  eliminarMuerte(uuid: string): void {
+    if (this.auth.isVisitante()) return;
+    const muerte = this.muertes.find(m => m.uuid === uuid);
+    const cantidad = muerte?.cantidad || 0;
+    const warning =
+      `¿Está seguro de que desea eliminar este registro de ${cantidad} baja(s)?\n\n` +
+      `⚠️ Las ${cantidad} gallina(s) VOLVERÁN a sumarse al lote #${muerte?.lote?.id_lote || 'desconocido'}.`;
+    this.dialog.confirmDelete(
+      warning,
+      '¿Eliminar este registro de mortalidad?',
+      'registro de mortalidad'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.muerteService.deleteMuerte(uuid).subscribe({
+        next: () => {
+          this.loadMuertes();
+          this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Registro de mortalidad eliminado. Las gallinas volvieron al lote.', 'Eliminado');
+        },
+        error: () => {
+          this.toast.error('No se pudo eliminar el registro.');
+          this.error = 'Error al eliminar registro';
+          this.cdr.detectChanges();
+        },
+      });
+    });
   }
 
   // --- CRUD TRATAMIENTOS ---
@@ -361,9 +380,8 @@ export class Salud implements OnInit {
     this.tratamientoForm = {
       fecha: new Date().toISOString().substring(0, 10),
       tratamiento: '',
-      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      estado_id: 1,
-      creado_por: Number(defaultCreator?.id) || 1,
+      lote_id: this.lotes.length > 0 ? this.lotes[0].uuid : undefined,
+      creado_por: activeUser?.id ? String(activeUser.id) : (defaultCreator?.id ? String(defaultCreator.id) : undefined),
     };
     this.mostrarModalTratamiento = true;
     this.cdr.detectChanges();
@@ -375,9 +393,8 @@ export class Salud implements OnInit {
     this.tratamientoForm = {
       fecha: t.fecha ? new Date(t.fecha).toISOString().substring(0, 10) : '',
       tratamiento: t.tratamiento,
-      lote_id: t.lote_id,
-      estado_id: t.estado_id || 1,
-      creado_por: t.creado_por || 1
+      lote_id: t.lote?.uuid,
+      creado_por: (t.creado_por as any)?.uuid || (t.creado_por as any)?.id
     };
     this.mostrarModalTratamiento = true;
     this.cdr.detectChanges();
@@ -393,48 +410,78 @@ export class Salud implements OnInit {
     if (this.auth.isVisitante()) return;
     if (this.guardando) return;
     if (!this.tratamientoForm.lote_id) return;
+    if (!this.tratamientoForm.tratamiento || this.tratamientoForm.tratamiento.trim() === '') {
+      this.error = 'El tratamiento no puede estar vacío';
+      this.guardando = false;
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.guardando = true;
 
     const payload: any = {
       fecha: this.tratamientoForm.fecha,
       tratamiento: this.tratamientoForm.tratamiento,
-      lote_id: Number(this.tratamientoForm.lote_id),
-      estado_id: Number(this.tratamientoForm.estado_id),
+      lote_id: this.tratamientoForm.lote_id,
     };
 
     // Al crear enviamos creado_por del usuario activo, al editar no para no sobrescribir el creador original
     if (!this.tratamientoEditando) {
       const activeUser = this.auth.getUser();
-      payload.creado_por = activeUser?.id ? Number(activeUser.id) : 1;
+      payload.creado_por = activeUser?.id ? String(activeUser.id) : undefined;
     }
 
     if (this.tratamientoEditando) {
-      this.tratamientoService.updateTratamiento(this.tratamientoEditando.id_tratamiento, payload).subscribe({
-        next: () => { this.cerrarModalTratamiento(); this.loadTratamientos(); },
-        error: () => { this.error = 'Error al actualizar tratamiento médico'; this.guardando = false; this.cdr.detectChanges(); },
+      this.tratamientoService.updateTratamiento(this.tratamientoEditando.uuid!, payload).subscribe({
+        next: () => {
+          this.cerrarModalTratamiento();
+          this.loadTratamientos();
+          this.toast.success('Tratamiento actualizado correctamente.');
+        },
+        error: () => {
+          this.toast.error('No se pudo actualizar el tratamiento.');
+          this.error = 'Error al actualizar tratamiento médico';
+          this.guardando = false;
+          this.cdr.detectChanges();
+        },
       });
     } else {
       this.tratamientoService.createTratamiento(payload).subscribe({
-        next: () => { this.cerrarModalTratamiento(); this.loadTratamientos(); },
-        error: () => { this.error = 'Error al registrar tratamiento médico'; this.guardando = false; this.cdr.detectChanges(); },
+        next: () => {
+          this.cerrarModalTratamiento();
+          this.loadTratamientos();
+          this.toast.success('Tratamiento registrado correctamente.');
+        },
+        error: () => {
+          this.toast.error('No se pudo registrar el tratamiento.');
+          this.error = 'Error al registrar tratamiento médico';
+          this.guardando = false;
+          this.cdr.detectChanges();
+        },
       });
     }
   }
 
-  eliminarTratamiento(id: number): void {
+  eliminarTratamiento(uuid: string): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este tratamiento médico?')) {
-      this.tratamientoService.deleteTratamiento(id).subscribe({
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este tratamiento médico?',
+      'tratamiento médico'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.tratamientoService.deleteTratamiento(uuid).subscribe({
         next: () => {
           this.loadTratamientos();
+          this.toast.success('Tratamiento eliminado correctamente.', 'Eliminado');
         },
         error: () => {
+          this.toast.error('No se pudo eliminar el tratamiento.');
           this.error = 'Error al eliminar tratamiento médico';
           this.cdr.detectChanges();
         }
       });
-    }
+    });
   }
 
   getUsuarioDisplayName(user: any): string {
@@ -460,23 +507,5 @@ export class Salud implements OnInit {
     const nombre = this.getRolName(rol);
     if (!nombre) return '';
     return nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase();
-  }
-
-  private generatePages(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
   }
 }

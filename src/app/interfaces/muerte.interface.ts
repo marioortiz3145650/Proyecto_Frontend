@@ -8,6 +8,7 @@ export interface Muerte {
   causa: string;
   usuario?: Usuario;
   lote?: Lote;
+  uuid?: string;
 }
 
 export interface FilterMuerteParams {

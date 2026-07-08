@@ -8,11 +8,14 @@ import { Lote } from '../../../interfaces/lote.interface';
 import { PaginatedResponse, PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 import { AuthService } from '../../../services/auth.service';
 import { AlertaService } from '../../../services/alerta';
+import { ToastService } from '../../../services/toast.service';
+import { DialogService } from '../../../services/dialog.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-galpones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './galpones.html',
   styleUrl: './galpones.css',
 })
@@ -36,7 +39,6 @@ export class Galpones implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterGalponParams = {};
-  pages: number[] = [];
   loading = false;
   error: string | null = null;
   Math = Math;
@@ -47,7 +49,7 @@ export class Galpones implements OnInit {
   galponForm: {
     nombre: string;
     direccion: string;
-    lote_id?: number | null;
+    lote_id?: string | null;
   } = {
     nombre: '',
     direccion: '',
@@ -57,7 +59,9 @@ export class Galpones implements OnInit {
   constructor(
     private galponService: GalponService,
     private loteService: LoteService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -91,7 +95,6 @@ export class Galpones implements OnInit {
       next: (response: PaginatedResponse<Galpon>) => {
         this.galpones = response.data;
         this.meta = response.meta;
-        this.generarPaginas();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -131,7 +134,8 @@ export class Galpones implements OnInit {
     this.cargarGalpones();
   }
 
-  cambiarLimite(): void {
+  cambiarLimite(newLimit?: number): void {
+    if (newLimit !== undefined) this.limit = newLimit;
     this.page = 1;
     this.cargarGalpones();
   }
@@ -143,7 +147,7 @@ export class Galpones implements OnInit {
     this.galponForm = {
       nombre: '',
       direccion: '',
-      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : null
+      lote_id: this.lotes.length > 0 ? (this.lotes[0].uuid || null) : null
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -155,7 +159,7 @@ export class Galpones implements OnInit {
     this.galponForm = {
       nombre: galpon.nombre,
       direccion: galpon.direccion,
-      lote_id: galpon.lote?.id_lote || null
+      lote_id: galpon.lote?.uuid || null
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -171,17 +175,21 @@ export class Galpones implements OnInit {
     const payload: any = {
       nombre: this.galponForm.nombre,
       direccion: this.galponForm.direccion,
-      lote: this.galponForm.lote_id ? Number(this.galponForm.lote_id) : null
+      lote: this.galponForm.lote_id || null
     };
 
-    if (this.galponEditando && this.galponEditando.id_galpon !== undefined) {
-      this.galponService.updateGalpon(this.galponEditando.id_galpon, payload).subscribe({
+    if (this.galponEditando && this.galponEditando.uuid !== undefined) {
+      this.galponService.updateGalpon(this.galponEditando.uuid, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.cargarGalpones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Galpón actualizado correctamente.');
         },
-        error: (err) => console.error('Error al editar galpón:', err),
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al editar galpón', 'Error');
+          this.cdr.detectChanges();
+        },
       });
     } else {
       this.galponService.createGalpon(payload).subscribe({
@@ -189,41 +197,36 @@ export class Galpones implements OnInit {
           this.cerrarModal();
           this.cargarGalpones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Galpón creado correctamente.');
         },
-        error: (err) => console.error('Error al crear galpón:', err),
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al crear galpón', 'Error');
+          this.cdr.detectChanges();
+        },
       });
     }
   }
 
-  eliminarGalpon(id: number | undefined): void {
+  eliminarGalpon(uuid: string | undefined): void {
     if (this.auth.isVisitante()) return;
-    if (id === undefined) return;
-    if (confirm('¿Está seguro de que desea eliminar este galpón?')) {
-      this.galponService.deleteGalpon(id).subscribe({
+    if (uuid === undefined) return;
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este galpón?',
+      'galpón'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.galponService.deleteGalpon(uuid).subscribe({
         next: () => {
           this.cargarGalpones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Galpón eliminado.', 'Eliminado');
         },
-        error: (err) => console.error('Error al eliminar galpón:', err),
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al eliminar galpón', 'Error');
+          this.cdr.detectChanges();
+        },
       });
-    }
-  }
-
-  generarPaginas(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
+    });
   }
 }

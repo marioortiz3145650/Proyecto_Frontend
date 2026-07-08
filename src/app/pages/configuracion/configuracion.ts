@@ -18,6 +18,8 @@ import { Alerta } from '../../interfaces/alerta.interface';
 import { Galpon } from '../../interfaces/galpon.interface';
 import { Lote } from '../../interfaces/lote.interface';
 import { Muerte } from '../../interfaces/muerte.interface';
+import { ToastService } from '../../services/toast.service';
+import { DialogService } from '../../services/dialog.service';
 
 type ConfigTab = 'alertas' | 'tipos-alimento' | 'unidades-medida' | 'razas';
 
@@ -84,7 +86,9 @@ export class Configuracion implements OnInit {
     private galponService: GalponService,
     private loteService: LoteService,
     private muerteService: MuerteService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -164,9 +168,10 @@ export class Configuracion implements OnInit {
       next: () => {
         this.cerrarModalTipo();
         this.loadTiposAlimento();
-        this.showSuccessToast();
+        this.toast.success(this.tipoEditando ? 'Tipo de alimento actualizado.' : 'Tipo de alimento creado correctamente.');
       },
       error: () => {
+        this.toast.error('Error al guardar tipo de alimento.');
         this.error = 'Error al guardar tipo de alimento';
         this.guardando = false;
         this.cdr.detectChanges();
@@ -175,18 +180,24 @@ export class Configuracion implements OnInit {
   }
 
   eliminarTipoAlimento(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar este tipo de alimento? (Nota: Puede fallar si está en uso por insumos existentes)')) {
+    this.dialog.confirmDelete(
+      'No se pudo eliminar. Puede estar en uso por otros insumos.',
+      '¿Eliminar este tipo de alimento?',
+      'tipo de alimento'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
       this.tipoAlimentoService.deleteTipoAlimento(id).subscribe({
         next: () => {
           this.loadTiposAlimento();
-          this.showSuccessToast();
+          this.toast.success('Tipo de alimento eliminado.', 'Eliminado');
         },
         error: () => {
+          this.toast.error('No se pudo eliminar. Puede estar en uso por otros insumos.');
           this.error = 'Error al eliminar. No se puede borrar porque está en uso por otros insumos.';
           this.cdr.detectChanges();
         }
       });
-    }
+    });
   }
 
   // --- CRUD UNIDADES DE MEDIDA ---
@@ -238,9 +249,10 @@ export class Configuracion implements OnInit {
       next: () => {
         this.cerrarModalUnidad();
         this.loadUnidadesMedida();
-        this.showSuccessToast();
+        this.toast.success(this.unidadEditando ? 'Unidad de medida actualizada.' : 'Unidad de medida creada.');
       },
       error: () => {
+        this.toast.error('Error al guardar unidad de medida.');
         this.error = 'Error al guardar unidad de medida';
         this.guardando = false;
         this.cdr.detectChanges();
@@ -249,18 +261,24 @@ export class Configuracion implements OnInit {
   }
 
   eliminarUnidadMedida(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar esta unidad de medida? (Nota: Puede fallar si está en uso por insumos existentes)')) {
+    this.dialog.confirmDelete(
+      'No se pudo eliminar. Puede estar en uso por otros insumos.',
+      '¿Eliminar esta unidad de medida?',
+      'unidad de medida'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
       this.unidadMedidaService.deleteUnidadMedida(id).subscribe({
         next: () => {
           this.loadUnidadesMedida();
-          this.showSuccessToast();
+          this.toast.success('Unidad de medida eliminada.', 'Eliminado');
         },
         error: () => {
+          this.toast.error('No se pudo eliminar. Puede estar en uso por otros insumos.');
           this.error = 'Error al eliminar. No se puede borrar porque está en uso por otros insumos.';
           this.cdr.detectChanges();
         }
       });
-    }
+    });
   }
 
   // --- CRUD RAZAS ---
@@ -283,14 +301,15 @@ export class Configuracion implements OnInit {
 
   toggleRazaStatus(raza: Raza): void {
     const nuevoEstado = !raza.activo;
-    this.razaService.updateRaza(raza.id_raza, { activo: nuevoEstado }).subscribe({
+    this.razaService.updateRaza(raza.uuid!, { activo: nuevoEstado }).subscribe({
       next: () => {
         raza.activo = nuevoEstado;
-        this.showSuccessToast();
+        this.toast.success(`Raza ${nuevoEstado ? 'activada' : 'desactivada'} correctamente.`);
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cambiar estado de raza:', err);
+        this.toast.error('No se pudo cambiar el estado de la raza.');
       }
     });
   }
@@ -325,17 +344,18 @@ export class Configuracion implements OnInit {
     };
 
     const action = this.razaEditando
-      ? this.razaService.updateRaza(this.razaEditando.id_raza, payload)
+      ? this.razaService.updateRaza(this.razaEditando.uuid!, payload)
       : this.razaService.createRaza(payload);
 
     action.subscribe({
       next: () => {
         this.cerrarModalRaza();
         this.loadRazas();
-        this.showSuccessToast();
+        this.toast.success(this.razaEditando ? 'Raza actualizada.' : 'Raza creada correctamente.');
       },
       error: (err) => {
         console.error('Error al guardar raza:', err);
+        this.toast.error('Error al guardar raza.');
         this.error = 'Error al guardar raza';
         this.guardando = false;
         this.cdr.detectChanges();
@@ -343,30 +363,32 @@ export class Configuracion implements OnInit {
     });
   }
 
-  eliminarRaza(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar esta raza?')) {
-      this.razaService.deleteRaza(id).subscribe({
+  eliminarRaza(uuid: string): void {
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar esta raza?',
+      'raza'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.razaService.deleteRaza(uuid).subscribe({
         next: () => {
           this.loadRazas();
-          this.showSuccessToast();
+          this.toast.success('Raza eliminada.', 'Eliminado');
         },
         error: (err) => {
           console.error('Error al eliminar raza:', err);
+          this.toast.error('No se pudo eliminar la raza.');
           const errorMsg = err.error?.message || 'No se pudo eliminar la raza.';
           this.error = Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg;
           this.cdr.detectChanges();
         }
       });
-    }
+    });
   }
 
   saveSettings(): void {
     localStorage.setItem(this.settingsKey, JSON.stringify(this.settings));
-    this.saveSuccess = true;
-    setTimeout(() => {
-      this.saveSuccess = false;
-      this.cdr.detectChanges();
-    }, 3000);
+    this.toast.success('Umbrales de alerta guardados correctamente.', 'Configuración');
   }
 
   evaluarYGenerarAlertas(): void {
@@ -402,11 +424,12 @@ export class Configuracion implements OnInit {
       next: (created) => {
         this.generatedAlertsCount = created.length;
         this.evaluatingAlerts = false;
-        this.showSuccessToast();
+        this.toast.info(`Se generaron ${created.length} alerta(s) nuevas.`, 'Evaluación completada');
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al evaluar alertas:', err);
+        this.toast.error('No se pudieron evaluar o generar las alertas.', 'Error');
         this.error = 'No se pudieron evaluar o generar las alertas';
         this.evaluatingAlerts = false;
         this.cdr.detectChanges();
@@ -430,7 +453,7 @@ export class Configuracion implements OnInit {
     const propuestas: Partial<Alerta>[] = [];
 
     lotes.forEach((lote) => {
-      const loteId = lote.id_lote;
+      const loteId = lote.uuid;
       const nombreLote = `Lote #${loteId}`;
 
       if (Number(lote.produccion_pct) < this.settings.minPosturaRate) {
@@ -445,7 +468,7 @@ export class Configuracion implements OnInit {
 
       const totalGallinas = Number(lote.total_gallinas || 0);
       const muertesLote = muertes
-        .filter((muerte) => muerte.lote?.id_lote === loteId)
+        .filter((muerte) => muerte.lote?.uuid === loteId)
         .reduce((total, muerte) => total + Number(muerte.cantidad || 0), 0);
       const mortalidad = totalGallinas > 0 ? (muertesLote / totalGallinas) * 100 : 0;
 
@@ -483,7 +506,7 @@ export class Configuracion implements OnInit {
           mensaje: `El galpón tiene ${gallinas} aves de ${capacidad} cupos (${ocupacion.toFixed(2)}%), superando el umbral de ${this.settings.maxOccupancyRate}%.`,
           tipo: 'infraestructura',
           prioridad: 'media',
-          galpon_id: galpon.id_galpon,
+          galpon_id: galpon.uuid ?? String(galpon.id_galpon),
         });
       }
     });
@@ -501,11 +524,4 @@ export class Configuracion implements OnInit {
     );
   }
 
-  showSuccessToast(): void {
-    this.saveSuccess = true;
-    setTimeout(() => {
-      this.saveSuccess = false;
-      this.cdr.detectChanges();
-    }, 3000);
-  }
 }

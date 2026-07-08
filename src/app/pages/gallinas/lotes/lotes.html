@@ -9,7 +9,8 @@
   <!-- Filtros -->
   <div class="filters-card">
     <h3>Filtros</h3>
-    <div class="filters-grid">
+    <div class="filters-row">
+      <div class="filters-grid">
       <div class="filter-field">
         <label for="filtroRaza">Raza</label>
         <select id="filtroRaza" [(ngModel)]="filtros.raza_id" (change)="applyFilters()">
@@ -29,18 +30,19 @@
         />
       </div>
 
-      <div class="filter-field">
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+      </div>
+
+      <div class="limit-field">
         <label for="limitSelect">Items por página</label>
         <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
           <option [ngValue]="5">5</option>
           <option [ngValue]="10">10</option>
           <option [ngValue]="25">25</option>
         </select>
-      </div>
-
-      <div class="filter-actions">
-        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
-        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
       </div>
     </div>
   </div>
@@ -96,7 +98,7 @@
                <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
                  <i class="pi pi-pencil"></i> Editar
                </button>
-               <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.id_lote)">
+               <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.uuid!)">
                  <i class="pi pi-trash"></i> Borrar
                </button>
              </div>
@@ -112,16 +114,12 @@
 
   <!-- Paginación -->
   <div class="pagination-container" *ngIf="!loading && !error && lotes.length > 0">
-    <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        <i class="pi pi-angle-left"></i>
-      </button>
-      <button *ngFor="let p of pages" class="btn btn-sm" [class.active]="p === meta.page" (click)="changePage(p)">{{ p }}</button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        <i class="pi pi-angle-right"></i>
-      </button>
-    </div>
-</div>
+    <app-pagination
+      [totalPages]="meta.totalPages"
+      [currentPage]="meta.page"
+      (pageChange)="changePage($event)"
+    ></app-pagination>
+  </div>
 
   <!-- Modal overlay de Lote -->
   <div class="modal-overlay" *ngIf="mostrarModal">

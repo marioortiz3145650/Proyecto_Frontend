@@ -25,7 +25,6 @@
   align-items: start;
 }
 
-/* Tabs Nav */
 .tabs-nav {
   display: flex;
   flex-direction: column;
@@ -132,7 +131,6 @@
   margin-top: 2px;
 }
 
-/* Input Suffix */
 .input-with-suffix {
   display: flex;
   align-items: center;

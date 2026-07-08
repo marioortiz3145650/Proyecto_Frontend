@@ -44,13 +44,13 @@ export class ProduccionService {
     a?: number;
     b?: number;
     c?: number;
-    lote_id: number;
+    lote_id: string;
     creado_por: string;
   }): Observable<Produccion> {
     return this.http.post<Produccion>(this.apiUrl, produccion);
   }
 
-  updateProduccion(id: number, produccion: Partial<{
+  updateProduccion(id: string, produccion: Partial<{
     fecha: string;
     jumbo?: number;
     aaa?: number;
@@ -58,13 +58,13 @@ export class ProduccionService {
     a?: number;
     b?: number;
     c?: number;
-    lote_id: number;
+    lote_id: string;
     creado_por: string;
   }>): Observable<Produccion> {
     return this.http.patch<Produccion>(`${this.apiUrl}/${id}`, produccion);
   }
 
-  deleteProduccion(id: number): Observable<any> {
+  deleteProduccion(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 }

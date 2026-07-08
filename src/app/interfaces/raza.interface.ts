@@ -3,4 +3,5 @@ export interface Raza {
   nombre_raza: string;
   activo: boolean;
   fecha_creacion: string | Date;
+  uuid?: string;
 }

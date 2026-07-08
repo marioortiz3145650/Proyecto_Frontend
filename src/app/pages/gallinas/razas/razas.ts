@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RazaService } from '../../../services/raza';
 import { Raza } from '../../../interfaces/raza.interface';
+import { DialogService } from '../../../services/dialog.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-razas',
@@ -29,7 +31,9 @@ export class Razas implements OnInit {
 
   constructor(
     private razaService: RazaService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: DialogService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -57,7 +61,7 @@ export class Razas implements OnInit {
 
   toggleRazaStatus(raza: Raza): void {
     const nuevoEstado = !raza.activo;
-    this.razaService.updateRaza(raza.id_raza, { activo: nuevoEstado }).subscribe({
+    this.razaService.updateRaza(raza.uuid!, { activo: nuevoEstado }).subscribe({
       next: () => {
         raza.activo = nuevoEstado;
         this.cdr.detectChanges();
@@ -101,7 +105,7 @@ export class Razas implements OnInit {
     };
 
     if (this.razaEditando) {
-      this.razaService.updateRaza(this.razaEditando.id_raza, payload).subscribe({
+      this.razaService.updateRaza(this.razaEditando.uuid!, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.loadRazas();
@@ -119,18 +123,24 @@ export class Razas implements OnInit {
     }
   }
 
-  eliminarRaza(id: number): void {
-    if (confirm('¿Está seguro de que desea eliminar esta raza?')) {
-      this.razaService.deleteRaza(id).subscribe({
+  eliminarRaza(uuid: string): void {
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar esta raza?',
+      'raza'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.razaService.deleteRaza(uuid).subscribe({
         next: () => {
           this.loadRazas();
+          this.toast.success('Raza eliminada correctamente.', 'Eliminado');
         },
         error: (err) => {
           console.error('Error al eliminar raza:', err);
           const errorMsg = err.error?.message || 'No se pudo eliminar la raza.';
-          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.toast.error(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg, 'Error');
         },
       });
-    }
+    });
   }
 }

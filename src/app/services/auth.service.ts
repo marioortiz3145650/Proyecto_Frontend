@@ -2,8 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
-import { catchError, timeout } from 'rxjs/operators';
+import { catchError, tap, timeout } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
+
+import { ToastService } from './toast.service';
 
 interface LoginResponse {
   access_token: string;
@@ -15,6 +17,8 @@ interface JwtPayload {
   rol: string;
   iat: number;
   exp: number;
+  nombre?: string;
+  correo?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,13 +28,18 @@ export class AuthService {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.API_URL}/login`, { nombre_usuario: username, password })
       .pipe(
         timeout(8000),
-        catchError(err => throwError(() => err))
+        tap(() => this.toast.success('Sesión iniciada correctamente')),
+        catchError(err => {
+          this.toast.error('Credenciales inválidas. Verifica usuario o contraseña.');
+          return throwError(() => err);
+        })
       );
   }
 
@@ -39,12 +48,17 @@ export class AuthService {
       .post<LoginResponse>(`${this.API_URL}/visitante`, {})
       .pipe(
         timeout(8000),
-        catchError(err => throwError(() => err))
+        tap(() => this.toast.success('Acceso como visitante exitoso.')),
+        catchError(err => {
+          this.toast.error('No se pudo acceder como visitante.');
+          return throwError(() => err);
+        })
       );
   }
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    this.toast.success('Sesión cerrada correctamente');
     this.router.navigate(['/login']);
   }
 
@@ -63,12 +77,18 @@ export class AuthService {
     }
   }
 
-  getUser(): { id: string | number; username: string; rol: string } | null {
+  getUser(): { id: string | number; username: string; rol: string; nombre?: string; correo?: string } | null {
     const token = this.getToken();
     if (!token) return null;
     try {
       const payload = this.decodePayload(token);
-      return { id: payload.sub, username: payload.username, rol: payload.rol || '' };
+      return { 
+        id: payload.sub, 
+        username: payload.username, 
+        rol: payload.rol || '',
+        nombre: payload.nombre,
+        correo: payload.correo
+      };
     } catch {
       return null;
     }

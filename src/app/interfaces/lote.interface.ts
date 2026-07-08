@@ -9,6 +9,7 @@ export interface Lote {
   fecha_fin: string | Date | null;
   total_gallinas?: number;
   fecha_creacion: string | Date;
+  uuid?: string;
 }
 
 export interface FilterLoteParams {

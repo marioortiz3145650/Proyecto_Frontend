@@ -37,6 +37,10 @@ export class UsersService {
     return this.http.get<PaginatedResponse<Usuario>>(this.apiUrl, { params: httpParams });
   }
 
+  getActiveUsers(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.apiUrl}/active`);
+  }
+
   getUser(id: string): Observable<Usuario> {
     return this.http.get<Usuario>(`${this.apiUrl}/${id}`);
   }
@@ -45,16 +49,8 @@ export class UsersService {
     return this.http.post<Usuario>(this.apiUrl, usuario);
   }
 
-  updateUser(id: string, usuario: Partial<Usuario>): Observable<Usuario> {
+  updateUser(id: string, usuario: Partial<Usuario> & Record<string, any>): Observable<Usuario> {
     return this.http.patch<Usuario>(`${this.apiUrl}/${id}`, usuario);
-  }
-
-  deactivateUser(id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${id}/deactivate`, {});
-  }
-
-  activateUser(id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${id}/activate`, {});
   }
 
   deleteUser(id: string): Observable<any> {

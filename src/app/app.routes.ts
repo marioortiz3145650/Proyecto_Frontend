@@ -1,28 +1,17 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
-import { roleGuard } from './guards/auth.guard';
+import { authGuard, adminGuard, roleGuard } from './guards/auth.guard';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout';
-import { LoginComponent } from './pages/login/login';
-import { Dashboard } from './pages/dashboard/dashboard';
-import { Lotes } from './pages/gallinas/lotes/lotes';
-import { Galpones } from './pages/gallinas/galpones/galpones';
-import { Razas } from './pages/gallinas/razas/razas';
-import { ProduccionManualComponent } from './pages/produccion/manual/produccion-manual';
-import { ProduccionAutomaticaComponent } from './pages/produccion/automatica/produccion-automatica';
-import { Alimentos } from './pages/alimentacion/alimentos/alimentos';
-import { Consumo } from './pages/alimentacion/consumo/consumo';
-import { Salud } from './pages/salud/salud';
-import { Alertas } from './pages/alertas/alertas';
-import { Reportes } from './pages/reportes/reportes';
-import { Configuracion } from './pages/configuracion/configuracion';
 
 export const routes: Routes = [
   {
     path: 'login',
     component: AuthLayoutComponent,
     children: [
-      { path: '', component: LoginComponent }
+      {
+        path: '',
+        loadComponent: () => import('./pages/login/login').then(m => m.LoginComponent)
+      }
     ]
   },
   {
@@ -31,19 +20,20 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: Dashboard },
-      { path: 'gallinas/lotes', component: Lotes },
-      { path: 'gallinas/galpones', component: Galpones },
-      { path: 'gallinas/razas', component: Razas },
+      { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'gallinas/lotes', loadComponent: () => import('./pages/gallinas/lotes/lotes').then(m => m.Lotes) },
+      { path: 'gallinas/galpones', loadComponent: () => import('./pages/gallinas/galpones/galpones').then(m => m.Galpones) },
+      { path: 'gallinas/razas', loadComponent: () => import('./pages/gallinas/razas/razas').then(m => m.Razas) },
       { path: 'produccion', redirectTo: 'produccion/manual', pathMatch: 'full' },
-      { path: 'produccion/manual', component: ProduccionManualComponent },
-      { path: 'produccion/automatica', component: ProduccionAutomaticaComponent },
-      { path: 'alimentacion/alimentos', component: Alimentos },
-      { path: 'alimentacion/consumo', component: Consumo },
-      { path: 'salud', component: Salud },
-      { path: 'alertas', component: Alertas },
-      { path: 'reportes', component: Reportes },
-      { path: 'configuracion', component: Configuracion, canActivate: [roleGuard] },
+      { path: 'produccion/manual', loadComponent: () => import('./pages/produccion/manual/produccion-manual').then(m => m.ProduccionManualComponent) },
+      { path: 'produccion/automatica', loadComponent: () => import('./pages/produccion/automatica/produccion-automatica').then(m => m.ProduccionAutomaticaComponent) },
+      { path: 'alimentacion/alimentos', loadComponent: () => import('./pages/alimentacion/alimentos/alimentos').then(m => m.Alimentos) },
+      { path: 'alimentacion/consumo', loadComponent: () => import('./pages/alimentacion/consumo/consumo').then(m => m.Consumo) },
+      { path: 'salud', loadComponent: () => import('./pages/salud/salud').then(m => m.Salud) },
+      { path: 'alertas', loadComponent: () => import('./pages/alertas/alertas').then(m => m.Alertas) },
+      { path: 'reportes', loadComponent: () => import('./pages/reportes/reportes').then(m => m.Reportes) },
+      { path: 'configuracion', loadComponent: () => import('./pages/configuracion/configuracion').then(m => m.Configuracion), canActivate: [roleGuard] },
+      { path: 'usuarios', loadComponent: () => import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent), canActivate: [adminGuard] },
     ]
   },
   { path: '**', redirectTo: '/login' }

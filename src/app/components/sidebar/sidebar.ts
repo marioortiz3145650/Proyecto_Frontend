@@ -100,12 +100,16 @@ export class SidebarComponent implements OnInit {
     { label: 'Salud', icon: 'pi pi-heart', route: '/salud' },
     { label: 'Alertas', icon: 'pi pi-bell', route: '/alertas' },
     { label: 'Reportes', icon: 'pi pi-file', route: '/reportes' },
+    { label: 'Usuarios', icon: 'pi pi-users', route: '/usuarios' },
     { label: 'Configuración', icon: 'pi pi-cog', route: '/configuracion' }
   ];
 
   get visibleMenuItems(): MenuItem[] {
     if (this.auth.isVisitante()) {
-      return this.allMenuItems.filter(item => item.label !== 'Configuración');
+      return this.allMenuItems.filter(item => item.label !== 'Configuración' && item.label !== 'Usuarios');
+    }
+    if (!this.auth.isAdmin()) {
+      return this.allMenuItems.filter(item => item.label !== 'Usuarios');
     }
     return this.allMenuItems;
   }
