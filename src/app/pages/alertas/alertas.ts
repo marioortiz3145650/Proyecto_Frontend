@@ -9,11 +9,14 @@ import { Lote } from '../../interfaces/lote.interface';
 import { Galpon } from '../../interfaces/galpon.interface';
 import { PaginationMeta, PaginationParams } from '../../interfaces/pagination.interface';
 import { AuthService } from '../../services/auth.service';
+import { DialogService } from '../../services/dialog.service';
+import { ToastService } from '../../services/toast.service';
+import { PaginationComponent } from '../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-alertas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './alertas.html',
   styleUrl: './alertas.css',
 })
@@ -31,7 +34,6 @@ export class Alertas implements OnInit {
   limit = 5;
   sortBy = 'id_alerta';
   sortOrder: 'ASC' | 'DESC' = 'ASC';
-  pages: number[] = [];
 
   loading = false;
   guardando = false;
@@ -52,8 +54,8 @@ export class Alertas implements OnInit {
     mensaje: string;
     tipo: string;
     prioridad: string;
-    lote_id?: number;
-    galpon_id?: number;
+    lote_id?: string;
+    galpon_id?: string;
   } = {
     titulo: '',
     mensaje: '',
@@ -67,7 +69,9 @@ export class Alertas implements OnInit {
     private alertaService: AlertaService,
     private loteService: LoteService,
     private galponService: GalponService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dialog: DialogService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -115,7 +119,6 @@ export class Alertas implements OnInit {
         } else {
           this.alertas = [];
         }
-        this.generatePages();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -176,7 +179,8 @@ export class Alertas implements OnInit {
     this.loadAlertas();
   }
 
-  changeLimit(): void {
+  changeLimit(newLimit?: number): void {
+    if (newLimit !== undefined) this.limit = newLimit;
     this.page = 1;
     this.loadAlertas();
   }
@@ -222,17 +226,23 @@ export class Alertas implements OnInit {
 
   eliminarAlerta(id: number): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este registro de alertas?')) {
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este registro de alertas?',
+      'registro de alertas'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
       this.alertaService.deleteAlerta(id).subscribe({
         next: () => {
           this.loadAlertas();
+          this.toast.success('Alerta eliminada correctamente.', 'Eliminado');
         },
         error: () => {
           this.error = 'Error al eliminar la alerta';
           this.cdr.detectChanges();
         },
       });
-    }
+    });
   }
 
   abrirModalCrear(): void {
@@ -270,10 +280,10 @@ export class Alertas implements OnInit {
     };
 
     if (this.alertaForm.lote_id) {
-      payload.lote_id = Number(this.alertaForm.lote_id);
+      payload.lote_id = this.alertaForm.lote_id;
     }
     if (this.alertaForm.galpon_id) {
-      payload.galpon_id = Number(this.alertaForm.galpon_id);
+      payload.galpon_id = this.alertaForm.galpon_id;
     }
 
     this.alertaService.createAlerta(payload).subscribe({
@@ -288,20 +298,5 @@ export class Alertas implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  private generatePages(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
   }
 }

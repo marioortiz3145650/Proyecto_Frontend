@@ -31,24 +31,24 @@ export class AlimentoService {
     return this.http.get<PaginatedResponse<Alimento>>(this.apiUrl, { params: httpParams });
   }
 
-  getAlimento(id: number): Observable<Alimento> {
+  getAlimento(id: string): Observable<Alimento> {
     return this.http.get<Alimento>(`${this.apiUrl}/${id}`);
   }
 
   createAlimento(alimento: {
     nombre: string;
-    tipo_alimento_id: number;
-    unidad_medida_id: number;
+    tipo_alimento_id: string;
+    unidad_medida_id: string;
     stock_actual: number;
     stock_minimo: number;
   }): Observable<Alimento> {
     return this.http.post<Alimento>(this.apiUrl, alimento);
   }
 
-  updateAlimento(id: number, alimento: {
+  updateAlimento(id: string, alimento: {
     nombre?: string;
-    tipo_alimento_id?: number;
-    unidad_medida_id?: number;
+    tipo_alimento_id?: string;
+    unidad_medida_id?: string;
     stock_actual?: number;
     stock_minimo?: number;
     precio_unitario?: number;
@@ -56,7 +56,7 @@ export class AlimentoService {
     return this.http.patch<Alimento>(`${this.apiUrl}/${id}`, alimento);
   }
 
-  deleteAlimento(id: number): Observable<any> {
+  deleteAlimento(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

@@ -3,9 +3,10 @@ export interface Usuario {
   nombre: string;
   correo?: string;
   nombre_usuario?: string;
-  rol?: { id: string; nombre: string } | string;
+  rol?: { id: string; uuid?: string; nombre: string } | string;
   activo: boolean;
   fecha_registro?: string;
+  uuid?: string;
 }
 
 export interface FilterUsuarioParams {

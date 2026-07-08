@@ -1,12 +1,14 @@
 export interface TipoAlimento {
   id_tipo_insumo: number;
   nombre: string;
+  uuid?: string;
 }
 
 export interface UnidadMedida {
   id_unidad: number;
   nombre: string;
   abreviatura: string;
+  uuid?: string;
 }
 
 export interface Alimento {
@@ -17,9 +19,10 @@ export interface Alimento {
   stock_actual: number;
   stock_minimo: number;
   precio_unitario?: number;
+  uuid?: string;
 }
 export interface FilterAlimentoParams {
   id_insumo?: number;
-  tipo_alimento?: number;
-  unidad_medida?: number;
+  tipo_alimento?: string;
+  unidad_medida?: string;
 }

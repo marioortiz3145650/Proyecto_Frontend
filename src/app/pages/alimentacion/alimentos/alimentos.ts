@@ -8,11 +8,14 @@ import { Alimento, TipoAlimento, UnidadMedida, FilterAlimentoParams } from '../.
 import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 import { AuthService } from '../../../services/auth.service';
 import { AlertaService } from '../../../services/alerta';
+import { ToastService } from '../../../services/toast.service';
+import { DialogService } from '../../../services/dialog.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-alimentos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './alimentos.html',
   styleUrl: './alimentos.css',
 })
@@ -32,7 +35,6 @@ export class Alimentos implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterAlimentoParams = {};
-  pages: number[] = [];
   loading = false;
   guardando = false;
   error: string | null = null;
@@ -42,8 +44,8 @@ export class Alimentos implements OnInit {
   alimentoEditando: Alimento | null = null;
   alimentoForm: {
     nombre: string;
-    tipo_alimento_id?: number;
-    unidad_medida_id?: number;
+    tipo_alimento_id?: string;
+    unidad_medida_id?: string;
     stock_actual: number;
     stock_minimo: number;
   } = {
@@ -62,7 +64,9 @@ export class Alimentos implements OnInit {
     private alimentoService: AlimentoService,
     private tipoAlimentoService: TipoAlimentoService,
     private unidadMedidaService: UnidadMedidaService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -110,7 +114,6 @@ export class Alimentos implements OnInit {
       next: (response) => {
         this.alimentos = response.data;
         this.meta = response.meta;
-        this.generatePages();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -141,7 +144,7 @@ export class Alimentos implements OnInit {
     this.loadAlimentos();
   }
 
-  changeLimit(): void { this.page = 1; this.loadAlimentos(); }
+  changeLimit(newLimit?: number): void { if (newLimit !== undefined) this.limit = newLimit; this.page = 1; this.loadAlimentos(); }
 
   abrirModalCrear(): void {
     if (this.auth.isVisitante()) return;
@@ -149,8 +152,8 @@ export class Alimentos implements OnInit {
     this.guardando = false;
     this.alimentoForm = {
       nombre: '',
-      tipo_alimento_id: this.tiposAlimento.length > 0 ? this.tiposAlimento[0].id_tipo_insumo : undefined,
-      unidad_medida_id: this.unidadesMedida.length > 0 ? this.unidadesMedida[0].id_unidad : undefined,
+      tipo_alimento_id: this.tiposAlimento.length > 0 ? this.tiposAlimento[0].uuid : undefined,
+      unidad_medida_id: this.unidadesMedida.length > 0 ? this.unidadesMedida[0].uuid : undefined,
       stock_actual: 0,
       stock_minimo: 0,
     };
@@ -164,8 +167,8 @@ export class Alimentos implements OnInit {
     this.guardando = false;
     this.alimentoForm = {
       nombre: alimento.nombre,
-      tipo_alimento_id: alimento.tipo_alimento?.id_tipo_insumo,
-      unidad_medida_id: alimento.unidad_medida?.id_unidad,
+      tipo_alimento_id: alimento.tipo_alimento?.uuid,
+      unidad_medida_id: alimento.unidad_medida?.uuid,
       stock_actual: Number(alimento.stock_actual),
       stock_minimo: Number(alimento.stock_minimo),
     };
@@ -189,7 +192,7 @@ export class Alimentos implements OnInit {
     this.tipoAlimentoService.createTipoAlimento({ nombre: this.nuevoTipoForm.nombre }).subscribe({
       next: (tipo) => {
         this.loadTiposAlimento();
-        this.alimentoForm.tipo_alimento_id = tipo.id_tipo_insumo;
+        this.alimentoForm.tipo_alimento_id = tipo.uuid;
         this.cerrarModalTipo();
       },
       error: () => { this.error = 'Error al crear tipo de alimento'; this.cdr.detectChanges(); }
@@ -213,7 +216,7 @@ export class Alimentos implements OnInit {
     }).subscribe({
       next: (unidad) => {
         this.loadUnidadesMedida();
-        this.alimentoForm.unidad_medida_id = unidad.id_unidad;
+        this.alimentoForm.unidad_medida_id = unidad.uuid;
         this.cerrarModalUnidad();
       },
       error: () => { this.error = 'Error al crear unidad de medida'; this.cdr.detectChanges(); }
@@ -229,20 +232,25 @@ export class Alimentos implements OnInit {
 
     const payload = {
       nombre: this.alimentoForm.nombre,
-      tipo_alimento_id: Number(this.alimentoForm.tipo_alimento_id),
-      unidad_medida_id: Number(this.alimentoForm.unidad_medida_id),
+      tipo_alimento_id: this.alimentoForm.tipo_alimento_id,
+      unidad_medida_id: this.alimentoForm.unidad_medida_id,
       stock_actual: Number(this.alimentoForm.stock_actual),
       stock_minimo: Number(this.alimentoForm.stock_minimo),
     };
 
     if (this.alimentoEditando) {
-      this.alimentoService.updateAlimento(this.alimentoEditando.id_insumo, payload).subscribe({
+      this.alimentoService.updateAlimento(this.alimentoEditando.uuid!, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.loadAlimentos();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Alimento actualizado correctamente.');
         },
-        error: () => { this.error = 'Error al actualizar alimento'; this.guardando = false; this.cdr.detectChanges(); },
+        error: (err) => {
+          this.showBackendError(err);
+          this.guardando = false;
+          this.cdr.detectChanges();
+        },
       });
     } else {
       this.alimentoService.createAlimento(payload).subscribe({
@@ -250,35 +258,48 @@ export class Alimentos implements OnInit {
           this.cerrarModal();
           this.loadAlimentos();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Alimento registrado correctamente.');
         },
-        error: () => { this.error = 'Error al registrar alimento'; this.guardando = false; this.cdr.detectChanges(); },
+        error: (err) => {
+          this.showBackendError(err);
+          this.guardando = false;
+          this.cdr.detectChanges();
+        },
       });
     }
   }
 
-  eliminarAlimento(id: number): void {
+  eliminarAlimento(uuid: string): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este alimento/insumo?')) {
-      this.alimentoService.deleteAlimento(id).subscribe({
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este alimento/insumo?',
+      'alimento/insumo'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.alimentoService.deleteAlimento(uuid).subscribe({
         next: () => {
           this.loadAlimentos();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Alimento eliminado correctamente.', 'Eliminado');
         },
-        error: () => { this.error = 'Error al eliminar alimento'; this.cdr.detectChanges(); },
+        error: (err) => {
+          this.showBackendError(err);
+          this.cdr.detectChanges();
+        },
       });
-    }
+    });
   }
 
-  private generatePages(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) { this.pages.push(i); }
+  get alimentosVisibles(): Alimento[] {
+    return this.alimentos.filter(a => {
+      const stock = Number(a.stock_actual);
+      return !Number.isNaN(stock) && stock > 0;
+    });
+  }
+
+  private showBackendError(err: any): void {
+    const msg = err?.error?.message || err?.message || 'Error al registrar alimento';
+    this.toast.error(msg, 'Error');
   }
 }

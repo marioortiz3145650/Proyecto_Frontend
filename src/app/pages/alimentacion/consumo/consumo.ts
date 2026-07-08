@@ -10,11 +10,14 @@ import { Lote } from '../../../interfaces/lote.interface';
 import { Usuario } from '../../../interfaces/usuario.interface';
 import { AuthService } from '../../../services/auth.service';
 import { AlertaService } from '../../../services/alerta';
+import { ToastService } from '../../../services/toast.service';
+import { DialogService } from '../../../services/dialog.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-consumo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './consumo.html',
   styleUrl: './consumo.css',
 })
@@ -38,27 +41,55 @@ export class Consumo implements OnInit {
     cantidad: number;
     tipo_movimiento: string;
     observaciones: string;
-    insumo_id?: number;
-    lote_id?: number;
+    insumo_id?: string;
+    lote_id?: string;
     creado_por?: string;
   } = {
-    fecha: '',
-    cantidad: 0,
-    tipo_movimiento: 'CONSUMO',
-    observaciones: '',
-  };
+      fecha: '',
+      cantidad: 0,
+      tipo_movimiento: 'CONSUMO',
+      observaciones: '',
+    };
 
   // Filtros locales
-  filtroLoteId?: number;
-  filtroInsumoId?: number;
+  filtroLoteId?: string;
+  filtroInsumoId?: string;
+
+  // Paginación
+  page = 1;
+  limit = 5;
+
+  get totalPages(): number {
+    return Math.ceil(this.movimientosFiltrados.length / this.limit);
+  }
+
+  get movimientosPaginados(): any[] {
+    const start = (this.page - 1) * this.limit;
+    const end = start + this.limit;
+    return this.movimientosFiltrados.slice(start, end);
+  }
+
+  changePage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.page = page;
+    this.cdr.detectChanges();
+  }
+
+  onLimitChange(newLimit: number): void {
+    this.limit = newLimit;
+    this.page = 1;
+    this.cdr.detectChanges();
+  }
 
   constructor(
     private movimientoService: MovimientoInsumoService,
     private alimentoService: AlimentoService,
     private loteService: LoteService,
     private usersService: UsersService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
+  ) { }
 
   ngOnInit(): void {
     this.loadAlimentos();
@@ -105,9 +136,9 @@ export class Consumo implements OnInit {
   }
 
   loadUsuarios(): void {
-    this.usersService.getUsers({ limit: 100 }).subscribe({
-      next: (response) => {
-        this.usuarios = response.data;
+    this.usersService.getActiveUsers().subscribe({
+      next: (usuarios) => {
+        this.usuarios = usuarios;
         this.usuariosAutorizados = this.usuarios.filter(u => {
           const rolNombre = this.getRolNombre(u.rol);
           return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
@@ -128,6 +159,13 @@ export class Consumo implements OnInit {
       next: (data) => {
         this.movimientos = data;
         this.loading = false;
+
+        // Ajuste defensivo de paginación
+        const maxPage = this.totalPages;
+        if (this.page > maxPage) {
+          this.page = Math.max(1, maxPage);
+        }
+
         this.cdr.detectChanges();
       },
       error: () => {
@@ -140,15 +178,21 @@ export class Consumo implements OnInit {
 
   get movimientosFiltrados(): any[] {
     return this.movimientos.filter(m => {
-      const matchLote = !this.filtroLoteId || m.lote?.id_lote === Number(this.filtroLoteId);
-      const matchInsumo = !this.filtroInsumoId || m.alimento?.id_insumo === Number(this.filtroInsumoId);
+      const matchLote = !this.filtroLoteId || m.lote?.uuid === this.filtroLoteId;
+      const matchInsumo = !this.filtroInsumoId || m.alimento?.uuid === this.filtroInsumoId;
       return matchLote && matchInsumo;
     });
+  }
+
+  get alimentosConStock(): Alimento[] {
+    return this.alimentos.filter(a => Number(a.stock_actual) > 0);
   }
 
   clearFilters(): void {
     this.filtroLoteId = undefined;
     this.filtroInsumoId = undefined;
+    this.page = 1;
+    this.cdr.detectChanges();
   }
 
   abrirModalCrear(): void {
@@ -158,22 +202,19 @@ export class Consumo implements OnInit {
       cantidad: 0,
       tipo_movimiento: 'CONSUMO',
       observaciones: '',
-      insumo_id: this.alimentos.length > 0 ? this.alimentos[0].id_insumo : undefined,
-      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
+      insumo_id: this.alimentos.length > 0 ? this.alimentos[0].uuid : undefined,
+      lote_id: this.lotes.length > 0 ? this.lotes[0].uuid : undefined,
     };
     const activeUser = this.auth.getUser();
-    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
-    this.movimientoForm.creado_por = defaultCreator?.id;
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.uuid) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+    this.movimientoForm.creado_por = defaultCreator?.uuid;
     this.mostrarModal = true;
     this.cdr.detectChanges();
   }
 
   get activeUserNombre(): string {
     const user = this.auth.getUser();
-    if (!user) return 'Desconocido';
-    const fullUser = this.usuariosAutorizados.find(u => String(u.id) === String(user.id));
-    if (fullUser?.nombre) return fullUser.nombre;
-    return user.username.toLowerCase() === 'admin' ? 'Administrador Sistema' : user.username;
+    return user?.nombre || user?.username || 'Desconocido';
   }
 
   cerrarModal(): void {
@@ -186,14 +227,22 @@ export class Consumo implements OnInit {
     if (this.guardando) return;
     if (!this.movimientoForm.insumo_id || !this.movimientoForm.lote_id) return;
 
+    const alimento = this.alimentos.find(a => a.uuid === this.movimientoForm.insumo_id);
+    const cantidad = Number(this.movimientoForm.cantidad);
+
+    if (alimento && cantidad > Number(alimento.stock_actual)) {
+      this.toast.warning(`Stock insuficiente para el alimento "${alimento.nombre}". Stock actual: ${alimento.stock_actual}, solicitado: ${cantidad}`, 'Stock insuficiente');
+      return;
+    }
+
     this.guardando = true;
     const payload: any = {
       fecha: this.movimientoForm.fecha,
-      cantidad: Number(this.movimientoForm.cantidad),
+      cantidad,
       tipo_movimiento: this.movimientoForm.tipo_movimiento,
       observaciones: this.movimientoForm.observaciones,
-      insumo_id: Number(this.movimientoForm.insumo_id),
-      lote_id: Number(this.movimientoForm.lote_id),
+      insumo_id: this.movimientoForm.insumo_id,
+      lote_id: this.movimientoForm.lote_id,
     };
     const activeUser = this.auth.getUser();
     payload.creado_por = activeUser?.id ? String(activeUser.id) : this.movimientoForm.creado_por;
@@ -201,34 +250,41 @@ export class Consumo implements OnInit {
     this.movimientoService.createMovimiento(payload).subscribe({
       next: () => {
         this.guardando = false;
+        this.error = null;
         this.cerrarModal();
         this.loadMovimientos();
         this.alertaService.evaluarYGenerarAlertas().subscribe();
+        this.toast.success('Consumo registrado correctamente.');
       },
       error: (err) => {
-        this.error = 'Error al registrar consumo de alimento';
-        const errorMsg = err.error?.message || 'Error al registrar consumo de alimento';
-        alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+        const msg = err.error?.message || 'Error al registrar consumo de alimento';
+        this.toast.error(msg, 'Error');
         this.guardando = false;
         this.cdr.detectChanges();
       }
     });
   }
 
-  eliminarMovimiento(id: number): void {
+  eliminarMovimiento(uuid: string): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este registro de consumo?')) {
-      this.movimientoService.deleteMovimiento(id).subscribe({
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este registro de consumo?',
+      'registro de consumo'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.movimientoService.deleteMovimiento(uuid).subscribe({
         next: () => {
           this.loadMovimientos();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Consumo eliminado correctamente.', 'Eliminado');
         },
         error: () => {
           this.error = 'Error al eliminar consumo';
           this.cdr.detectChanges();
         }
       });
-    }
+    });
   }
 
   getUsuarioDisplayName(user: any): string {

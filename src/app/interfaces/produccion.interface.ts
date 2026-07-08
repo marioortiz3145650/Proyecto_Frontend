@@ -3,7 +3,7 @@ import { Usuario } from './usuario.interface';
 
 export interface FilterProduccionParams {
   fecha?: string;
-  lote?: number;
+  lote?: string;
   fecha_inicio?: string;
   fecha_fin?: string;
 }
@@ -21,9 +21,5 @@ export interface Produccion {
   lote?: Lote;
   creado_por?: Usuario;
   fecha_registro: string | Date;
-}
-
-export interface FilterProduccionParams {
-  fecha?: string;
-  lote?: number;
+  uuid?: string;
 }

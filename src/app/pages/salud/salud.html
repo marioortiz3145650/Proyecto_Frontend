@@ -76,7 +76,7 @@
                 <button class="btn-icon btn-edit" (click)="abrirModalEditarMuerte(m)" title="Editar">
                   <i class="pi pi-pencil"></i>
                 </button>
-                <button class="btn-icon btn-delete" (click)="eliminarMuerte(m.id_muerte)" title="Eliminar">
+                <button class="btn-icon btn-delete" (click)="eliminarMuerte(m.uuid!)" title="Eliminar">
                   <i class="pi pi-trash"></i>
                 </button>
               </div>
@@ -91,17 +91,11 @@
 
     <!-- Paginación -->
     <div class="pagination-container" *ngIf="meta.totalPages > 1">
-      <div class="pagination-controls">
-        <button [disabled]="!meta.hasPrev" (click)="changePage(page - 1)" class="page-btn">
-          <i class="pi pi-angle-left"></i>
-        </button>
-        <button *ngFor="let p of pages" (click)="changePage(p)" [class.active]="p === page" class="page-btn">
-          {{ p }}
-        </button>
-        <button [disabled]="!meta.hasNext" (click)="changePage(page + 1)" class="page-btn">
-          <i class="pi pi-angle-right"></i>
-        </button>
-      </div>
+      <app-pagination
+        [totalPages]="meta.totalPages"
+        [currentPage]="meta.page"
+        (pageChange)="changePage($event)"
+      ></app-pagination>
     </div>
   </div>
 
@@ -122,33 +116,27 @@
             <th>Fecha</th>
             <th>Lote</th>
             <th>Tratamiento / Medicamento</th>
-            <th>Estado</th>
             <th *ngIf="!auth.isVisitante()">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let t of tratamientos">
             <td>{{ t.fecha | date:'dd/MM/yyyy' }}</td>
-            <td><strong>{{ getLoteName(t.lote_id) }}</strong></td>
+            <td><strong>Lote {{ t.lote?.id_lote || 'N/A' }} ({{ t.lote?.raza?.nombre_raza || '' }})</strong></td>
             <td>{{ t.tratamiento }}</td>
-            <td>
-              <span class="status-badge" [class.badge-active]="t.estado_id === 1" [class.badge-inactive]="t.estado_id !== 1">
-                {{ t.estado_id === 1 ? 'Activo' : 'Completado' }}
-              </span>
-            </td>
             <td *ngIf="!auth.isVisitante()">
               <div class="action-buttons">
                 <button class="btn-icon btn-edit" (click)="abrirModalEditarTratamiento(t)" title="Editar">
                   <i class="pi pi-pencil"></i>
                 </button>
-                <button class="btn-icon btn-delete" (click)="eliminarTratamiento(t.id_tratamiento)" title="Eliminar">
+                <button class="btn-icon btn-delete" (click)="eliminarTratamiento(t.uuid!)" title="Eliminar">
                   <i class="pi pi-trash"></i>
                 </button>
               </div>
             </td>
           </tr>
-          <tr *ngIf="tratamientos.length === 0">
-            <td [attr.colspan]="auth.isVisitante() ? 4 : 5" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
+          <tr *ngIf="tratamientos.length === 0" class="empty">
+            <td [attr.colspan]="auth.isVisitante() ? 3 : 4" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
           </tr>
         </tbody>
       </table>
@@ -172,7 +160,7 @@
           <div class="form-field">
             <label for="mLote">Lote Afectado *</label>
             <select id="mLote" [(ngModel)]="muerteForm.loteId" name="loteId" required>
-              <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
+              <option *ngFor="let l of lotes" [value]="l.uuid">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
             </select>
           </div>
 
@@ -224,15 +212,7 @@
           <div class="form-field">
             <label for="tLote">Lote Destino *</label>
             <select id="tLote" [(ngModel)]="tratamientoForm.lote_id" name="lote_id" required>
-              <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="tEstado">Estado del Tratamiento</label>
-            <select id="tEstado" [(ngModel)]="tratamientoForm.estado_id" name="estado_id">
-              <option [ngValue]="1">Activo / En Curso</option>
-              <option [ngValue]="2">Completado</option>
+              <option *ngFor="let l of lotes" [value]="l.uuid">Lote {{ l.id_lote }} ({{ l.raza?.nombre_raza }})</option>
             </select>
           </div>
 

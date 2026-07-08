@@ -11,10 +11,11 @@ export interface Galpon {
   fecha_creacion?: Date | string;
   createdAt?: Date;
   updatedAt?: Date;
+  uuid?: string;
 }
 
 export interface FilterGalponParams {
   nombre?: string;
   direccion?: string;
-  lote?: number;
+  lote?: string;
 }

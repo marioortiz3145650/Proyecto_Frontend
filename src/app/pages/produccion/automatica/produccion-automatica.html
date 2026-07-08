@@ -14,7 +14,7 @@
       <div class="config-field">
         <label for="formLote">Lote Destino</label>
         <select id="formLote" [(ngModel)]="selectedLoteId" required>
-          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+          <option *ngFor="let lote of lotes" [value]="lote.uuid">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
         </select>
       </div>
 
@@ -26,7 +26,7 @@
       <div class="config-field">
         <label for="selectCamara">Cámara Web</label>
         <select id="selectCamara" [(ngModel)]="selectedCameraIndex" (change)="cambiarCamara()">
-          <option *ngFor="let cam of availableCameras" [value]="cam.index">
+          <option *ngFor="let cam of availableCameras" [ngValue]="cam.index">
             {{ cam.label }}
           </option>
         </select>

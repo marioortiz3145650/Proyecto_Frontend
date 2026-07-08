@@ -134,13 +134,13 @@ export class AlertaService {
               mensaje: `La postura actual es ${lote.produccion_pct}% y está por debajo del mínimo configurado de ${settings.minPosturaRate}%.`,
               tipo: 'produccion',
               prioridad: 'alta',
-              lote_id: loteId,
+              lote_id: lote.uuid,
             });
           }
 
           const totalGallinas = Number(lote.total_gallinas || 0);
           const muertesLote = muertes
-            .filter((muerte) => muerte.lote?.id_lote === loteId)
+            .filter((muerte) => muerte.lote?.uuid === lote.uuid)
             .reduce((total, muerte) => total + Number(muerte.cantidad || 0), 0);
           const mortalidad = totalGallinas > 0 ? (muertesLote / totalGallinas) * 100 : 0;
 
@@ -150,7 +150,7 @@ export class AlertaService {
               mensaje: `La mortalidad acumulada es ${mortalidad.toFixed(2)}% (${muertesLote} bajas de ${totalGallinas} aves), por encima del máximo configurado de ${settings.maxMortalityRate}%.`,
               tipo: 'salud',
               prioridad: 'alta',
-              lote_id: loteId,
+              lote_id: lote.uuid,
             });
           }
         });
@@ -178,7 +178,7 @@ export class AlertaService {
               mensaje: `El galpón tiene ${gallinas} aves de ${capacidad} cupos (${ocupacion.toFixed(2)}%), superando el umbral de ${settings.maxOccupancyRate}%.`,
               tipo: 'infraestructura',
               prioridad: 'media',
-              galpon_id: galpon.id_galpon,
+              galpon_id: galpon.uuid,
             });
           }
         });

@@ -9,7 +9,8 @@
   <!-- Filtros -->
   <div class="filters-card">
     <h3>Filtros</h3>
-    <div class="filters-grid">
+    <div class="filters-row">
+      <div class="filters-grid">
       <div class="filter-field">
         <label for="filtroId">ID Insumo</label>
         <input
@@ -25,7 +26,7 @@
         <label for="filtroTipo">Tipo de Alimento</label>
         <select id="filtroTipo" [(ngModel)]="filtros.tipo_alimento" (ngModelChange)="applyFilters()">
           <option [ngValue]="undefined">Todos</option>
-          <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
+          <option *ngFor="let tipo of tiposAlimento" [value]="tipo.uuid">{{ tipo.nombre }}</option>
         </select>
       </div>
 
@@ -33,10 +34,16 @@
         <label for="filtroUnidad">Unidad de Medida</label>
         <select id="filtroUnidad" [(ngModel)]="filtros.unidad_medida" (ngModelChange)="applyFilters()">
           <option [ngValue]="undefined">Todas</option>
-          <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+          <option *ngFor="let uni of unidadesMedida" [value]="uni.uuid">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
         </select>
       </div>
-      <div class="filter-field">
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+      </div>
+      </div>
+
+      <div class="limit-field">
         <label for="limitSelect">Items por página</label>
         <select id="limitSelect" [(ngModel)]="limit" (ngModelChange)="changeLimit()">
           <option [ngValue]="5">5</option>
@@ -44,19 +51,13 @@
           <option [ngValue]="25">25</option>
         </select>
       </div>
-
-      <div class="filter-actions">
-        <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
-        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
-      </div>
     </div>
   </div>
 
   <div *ngIf="loading" class="loading">Cargando inventario de alimentos...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
 
   <!-- Tabla de resultados -->
-  <div class="table-container" *ngIf="!loading && !error">
+  <div class="table-container" *ngIf="!loading">
     <table class="table">
       <thead>
         <tr>
@@ -82,7 +83,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let alim of alimentos">
+        <tr *ngFor="let alim of alimentosVisibles">
           <td>{{ alim.id_insumo }}</td>
           <td><strong>{{ alim.nombre }}</strong></td>
           <td>{{ alim.tipo_alimento?.nombre || 'N/A' }}</td>
@@ -94,7 +95,7 @@
               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(alim)">
                 <i class="pi pi-pencil"></i> Editar
               </button>
-              <button class="btn btn-delete btn-sm" (click)="eliminarAlimento(alim.id_insumo)">
+              <button class="btn btn-delete btn-sm" (click)="eliminarAlimento(alim.uuid!)">
                 <i class="pi pi-trash"></i> Borrar
               </button>
             </div>
@@ -103,29 +104,18 @@
       </tbody>
     </table>
 
-    <div *ngIf="alimentos.length === 0" class="empty">
+    <div *ngIf="alimentosVisibles.length === 0" class="empty">
       No hay alimentos registrados en el inventario.
     </div>
   </div>
 
   <!-- Paginación -->
-  <div class="pagination-container" *ngIf="!loading && !error && alimentos.length > 0"> 
-    <div class="pagination-controls">
-      <button class="btn btn-sm" [disabled]="!meta.hasPrev" (click)="changePage(page - 1)">
-        <i class="pi pi-angle-left"></i>
-      </button>
-      <button
-        *ngFor="let p of pages"
-        class="btn btn-sm"
-        [class.active]="p === meta.page"
-        (click)="changePage(p)"
-      >
-        {{ p }}
-      </button>
-      <button class="btn btn-sm" [disabled]="!meta.hasNext" (click)="changePage(page + 1)">
-        <i class="pi pi-angle-right"></i>
-      </button>
-    </div>
+  <div class="pagination-container" *ngIf="!loading && alimentosVisibles.length > 0">
+    <app-pagination
+      [totalPages]="meta.totalPages"
+      [currentPage]="meta.page"
+      (pageChange)="changePage($event)"
+    ></app-pagination>
   </div>
 
   <!-- Modal overlay de Alimento -->
@@ -154,7 +144,7 @@
             <div class="input-with-button">
               <select id="formTipo" name="tipo_alimento_id" [(ngModel)]="alimentoForm.tipo_alimento_id" required>
                 <option [value]="undefined" disabled>Primero crea un tipo alimento</option>
-                <option *ngFor="let tipo of tiposAlimento" [value]="tipo.id_tipo_insumo">{{ tipo.nombre }}</option>
+                <option *ngFor="let tipo of tiposAlimento" [value]="tipo.uuid">{{ tipo.nombre }}</option>
               </select>
               <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalTipo()">
                 <i class="pi pi-plus"></i>
@@ -167,7 +157,7 @@
             <div class="input-with-button">
               <select id="formUnidad" name="unidad_medida_id" [(ngModel)]="alimentoForm.unidad_medida_id" required>
                 <option [value]="undefined" disabled> Primero crea una unidad de medida</option>
-                <option *ngFor="let uni of unidadesMedida" [value]="uni.id_unidad">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
+                <option *ngFor="let uni of unidadesMedida" [value]="uni.uuid">{{ uni.nombre }} ({{ uni.abreviatura }})</option>
               </select>
               <button type="button" class="btn btn-primary inline-add-btn" (click)="abrirModalUnidad()">
                 <i class="pi pi-plus"></i>

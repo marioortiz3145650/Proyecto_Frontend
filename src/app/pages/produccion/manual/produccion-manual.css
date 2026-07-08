@@ -60,6 +60,8 @@ h2 {
   font-size: 14px;
   color: black;
   background-color: #f8f9fa;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .filter-field input:focus,
@@ -220,8 +222,9 @@ h2 {
 
 .pagination-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  position: relative;
   flex-wrap: wrap;
   gap: 15px;
 }
@@ -380,4 +383,34 @@ h2 {
   .form-grid-three {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.limit-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.limit-field label {
+  font-weight: 500;
+  color: #666;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.limit-field select {
+  width: 70px;
+  padding: 8px 10px;
+  border: 1px solid hsl(0, 0%, 87%);
+  border-radius: 6px;
+  font-size: 14px;
+  color: black;
+  background-color: #D4D4D4;
+}
+
+.limit-field select:focus {
+  outline: none;
+  border-color: #007bff;
 }

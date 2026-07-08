@@ -36,7 +36,7 @@ export class LoteService {
     return this.http.get<PaginatedResponse<Lote>>(this.apiUrl, { params: httpParams });
   }
 
-  getLote(id: number): Observable<Lote> {
+  getLote(id: string): Observable<Lote> {
     return this.http.get<Lote>(`${this.apiUrl}/${id}`);
   }
 
@@ -44,14 +44,14 @@ export class LoteService {
     return this.http.post<Lote>(this.apiUrl, lote);
   }
 
-  updateLote(id: number, lote: Partial<Lote>): Observable<Lote> {
+  updateLote(id: string, lote: Partial<Lote>): Observable<Lote> {
     return this.http.patch<Lote>(`${this.apiUrl}/${id}`, lote);
   }
 
-  deleteLote(id: number): Observable<any> {
+  deleteLote(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
-  toggleActivo(id: number): Observable<Lote> {
+  toggleActivo(id: string): Observable<Lote> {
     return this.http.post<Lote>(`${this.apiUrl}/${id}/toggle`, {});
   }
 }

@@ -31,7 +31,7 @@ export class GalponService {
     return this.http.get<PaginatedResponse<Galpon>>(this.apiUrl, { params: httpParams });
   }
 
-  getGalpon(id: number): Observable<Galpon> {
+  getGalpon(id: string): Observable<Galpon> {
     return this.http.get<Galpon>(`${this.apiUrl}/${id}`);
   }
 
@@ -39,11 +39,11 @@ export class GalponService {
     return this.http.post<Galpon>(this.apiUrl, galpon);
   }
 
-  updateGalpon(id: number, galpon: Partial<Galpon>): Observable<Galpon> {
+  updateGalpon(id: string, galpon: Partial<Galpon>): Observable<Galpon> {
     return this.http.patch<Galpon>(`${this.apiUrl}/${id}`, galpon);
   }
 
-  deleteGalpon(id: number): Observable<any> {
+  deleteGalpon(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 }

@@ -10,11 +10,14 @@ import { Usuario } from '../../../interfaces/usuario.interface';
 import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 import { AuthService } from '../../../services/auth.service';
 import { AlertaService } from '../../../services/alerta';
+import { ToastService } from '../../../services/toast.service';
+import { DialogService } from '../../../services/dialog.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-produccion-manual',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './produccion-manual.html',
   styleUrl: './produccion-manual.css',
 })
@@ -24,6 +27,8 @@ export class ProduccionManualComponent implements OnInit {
   usuarios: Usuario[] = [];
   auth = inject(AuthService);
   private alertaService = inject(AlertaService);
+  private toast = inject(ToastService);
+  private dialog = inject(DialogService);
 
   usuariosAutorizados: Usuario[] = [];
   meta: PaginationMeta = {
@@ -38,10 +43,9 @@ export class ProduccionManualComponent implements OnInit {
   page = 1;
   limit = 5;
   sortBy = 'fecha';
-  sortOrder: 'ASC' | 'DESC' = 'ASC';
+  sortOrder: 'ASC' | 'DESC' = 'DESC';
 
   filtros: FilterProduccionParams = {};
-  pages: number[] = [];
   loading = false;
   error: string | null = null;
   Math = Math;
@@ -56,7 +60,7 @@ export class ProduccionManualComponent implements OnInit {
     a: number;
     b: number;
     c: number;
-    lote_id?: number;
+    lote_id?: string;
     creado_por?: string;
   } = {
     fecha: '',
@@ -100,9 +104,9 @@ export class ProduccionManualComponent implements OnInit {
   }
 
   loadUsuarios(): void {
-    this.usersService.getUsers({ limit: 100 }).subscribe({
-      next: (response) => {
-        this.usuarios = response.data;
+    this.usersService.getActiveUsers().subscribe({
+      next: (usuarios) => {
+        this.usuarios = usuarios;
         this.usuariosAutorizados = this.usuarios.filter(u => {
           const rolNombre = this.getRolNombre(u.rol);
           return rolNombre === 'Administrador' || rolNombre === 'Aprendiz';
@@ -138,7 +142,6 @@ export class ProduccionManualComponent implements OnInit {
       next: (response) => {
         this.producciones = response.data;
         this.meta = response.meta;
-        this.generatePages();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -166,7 +169,7 @@ export class ProduccionManualComponent implements OnInit {
       this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
     } else {
       this.sortBy = field;
-      this.sortOrder = 'ASC';
+      this.sortOrder = 'DESC';
     }
     this.loadProducciones();
   }
@@ -177,7 +180,8 @@ export class ProduccionManualComponent implements OnInit {
     this.loadProducciones();
   }
 
-  changeLimit(): void {
+  changeLimit(newLimit?: number): void {
+    if (newLimit !== undefined) this.limit = newLimit;
     this.page = 1;
     this.loadProducciones();
   }
@@ -185,9 +189,9 @@ export class ProduccionManualComponent implements OnInit {
   abrirModalCrear(): void {
     if (this.auth.isVisitante()) return;
     this.produccionEditando = null;
-    
+
     const activeUser = this.auth.getUser();
-    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.uuid) === String(activeUser?.id)) || this.usuariosAutorizados[0];
 
     this.produccionForm = {
       fecha: new Date().toISOString().substring(0, 10),
@@ -197,8 +201,8 @@ export class ProduccionManualComponent implements OnInit {
       a: 0,
       b: 0,
       c: 0,
-      lote_id: this.lotes.length > 0 ? this.lotes[0].id_lote : undefined,
-      creado_por: defaultCreator?.id,
+      lote_id: this.lotes.length > 0 ? this.lotes[0].uuid : undefined,
+      creado_por: defaultCreator?.uuid,
     };
     this.mostrarModal = true;
     this.cdr.detectChanges();
@@ -210,8 +214,8 @@ export class ProduccionManualComponent implements OnInit {
     const rawDate = prod.fecha ? new Date(prod.fecha).toISOString().substring(0, 10) : '';
 
     const activeUser = this.auth.getUser();
-    const creadorId = prod.creado_por?.id || (activeUser?.id ? String(activeUser.id) : undefined);
-    const loteId = prod.lote?.id_lote || (this.lotes.length > 0 ? this.lotes[0].id_lote : undefined);
+    const creadorId = prod.creado_por?.uuid || (activeUser?.id ? String(activeUser.id) : undefined);
+    const loteId = prod.lote?.uuid || (this.lotes.length > 0 ? this.lotes[0].uuid : undefined);
 
     this.produccionForm = {
       fecha: rawDate,
@@ -235,10 +239,7 @@ export class ProduccionManualComponent implements OnInit {
 
   get activeUserNombre(): string {
     const user = this.auth.getUser();
-    if (!user) return 'Desconocido';
-    const fullUser = this.usuariosAutorizados.find(u => String(u.id) === String(user.id));
-    if (fullUser?.nombre) return fullUser.nombre;
-    return user.username.toLowerCase() === 'admin' ? 'Administrador Sistema' : user.username;
+    return user?.nombre || user?.username || 'Desconocido';
   }
 
   getUsuarioDisplayName(user: any): string {
@@ -273,7 +274,7 @@ export class ProduccionManualComponent implements OnInit {
     }
 
     const activeUser = this.auth.getUser();
-    const defaultCreator = this.usuariosAutorizados.find(u => String(u.id) === String(activeUser?.id)) || this.usuariosAutorizados[0];
+    const defaultCreator = this.usuariosAutorizados.find(u => String(u.uuid) === String(activeUser?.id)) || this.usuariosAutorizados[0];
 
     const payload: any = {
       fecha: this.produccionForm.fecha,
@@ -283,24 +284,23 @@ export class ProduccionManualComponent implements OnInit {
       a: Number(this.produccionForm.a || 0),
       b: Number(this.produccionForm.b || 0),
       c: Number(this.produccionForm.c || 0),
-      lote_id: Number(this.produccionForm.lote_id),
+      lote_id: this.produccionForm.lote_id,
     };
 
     if (!this.produccionEditando) {
-      payload.creado_por = defaultCreator?.id;
+      payload.creado_por = defaultCreator?.uuid;
     }
 
     if (this.produccionEditando) {
-      this.produccionService.updateProduccion(this.produccionEditando.id_produccion, payload).subscribe({
+      this.produccionService.updateProduccion(this.produccionEditando.uuid!, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.loadProducciones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Producción editada correctamente.');
         },
         error: (err) => {
-          console.error('Error al editar producción:', err);
-          const errorMsg = err.error?.message || 'Error al editar producción';
-          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.toast.error(err.error?.message || 'Error al editar producción', 'Error');
           this.cdr.detectChanges();
         },
       });
@@ -310,50 +310,35 @@ export class ProduccionManualComponent implements OnInit {
           this.cerrarModal();
           this.loadProducciones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Producción registrada correctamente.');
         },
         error: (err) => {
-          console.error('Error al registrar producción:', err);
-          const errorMsg = err.error?.message || 'Error al registrar producción';
-          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.toast.error(err.error?.message || 'Error al registrar producción', 'Error');
           this.cdr.detectChanges();
         },
       });
     }
   }
 
-  eliminarProduccion(id: number): void {
+  eliminarProduccion(uuid: string): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este registro de producción?')) {
-      this.produccionService.deleteProduccion(id).subscribe({
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este registro de producción?',
+      'registro de producción'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.produccionService.deleteProduccion(uuid).subscribe({
         next: () => {
           this.loadProducciones();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Producción eliminada.', 'Eliminado');
         },
         error: (err) => {
-          console.error('Error al eliminar producción:', err);
-          const errorMsg = err.error?.message || 'Error al eliminar producción';
-          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.toast.error(err.error?.message || 'Error al eliminar producción', 'Error');
           this.cdr.detectChanges();
         },
       });
-    }
-  }
-
-  private generatePages(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
+    });
   }
 }

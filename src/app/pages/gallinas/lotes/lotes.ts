@@ -8,11 +8,14 @@ import { Raza } from '../../../interfaces/raza.interface';
 import { PaginationMeta, PaginationParams } from '../../../interfaces/pagination.interface';
 import { AuthService } from '../../../services/auth.service';
 import { AlertaService } from '../../../services/alerta';
+import { ToastService } from '../../../services/toast.service';
+import { DialogService } from '../../../services/dialog.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-lotes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './lotes.html',
   styleUrl: './lotes.css',
 })
@@ -36,7 +39,6 @@ export class Lotes implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterLoteParams = {};
-  pages: number[] = [];
   loading = false;
   error: string | null = null;
   Math = Math;
@@ -59,7 +61,9 @@ export class Lotes implements OnInit {
   constructor(
     private loteService: LoteService,
     private razaService: RazaService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
+    private dialog: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -95,7 +99,6 @@ export class Lotes implements OnInit {
       next: (response) => {
         this.lotes = response.data;
         this.meta = response.meta;
-        this.generatePages();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -135,7 +138,8 @@ export class Lotes implements OnInit {
     this.loadLotes();
   }
 
-  changeLimit(): void {
+  changeLimit(newLimit?: number): void {
+    if (newLimit !== undefined) this.limit = newLimit;
     this.page = 1;
     this.loadLotes();
   }
@@ -186,13 +190,17 @@ export class Lotes implements OnInit {
     };
 
     if (this.loteEditando) {
-      this.loteService.updateLote(this.loteEditando.id_lote, payload).subscribe({
+      this.loteService.updateLote(this.loteEditando.uuid!, payload).subscribe({
         next: () => {
           this.cerrarModal();
           this.loadLotes();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Lote actualizado correctamente.');
         },
-        error: (err) => console.error('Error al editar lote:', err),
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al editar lote', 'Error');
+          this.cdr.detectChanges();
+        },
       });
     } else {
       this.loteService.createLote(payload).subscribe({
@@ -200,45 +208,36 @@ export class Lotes implements OnInit {
           this.cerrarModal();
           this.loadLotes();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Lote creado correctamente.');
         },
-        error: (err) => console.error('Error al crear lote:', err),
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al crear lote', 'Error');
+          this.cdr.detectChanges();
+        },
       });
     }
   }
 
-  eliminarLote(id: number): void {
+  eliminarLote(uuid: string): void {
     if (this.auth.isVisitante()) return;
-    if (confirm('¿Está seguro de que desea eliminar este lote?')) {
-      this.loteService.deleteLote(id).subscribe({
+    this.dialog.confirmDelete(
+      'Esta acción puede afectar a otros procesos o registros vinculados.',
+      '¿Eliminar este lote?',
+      'lote'
+    ).subscribe((confirmado) => {
+      if (!confirmado) return;
+      this.loteService.deleteLote(uuid).subscribe({
         next: () => {
           this.loadLotes();
           this.alertaService.evaluarYGenerarAlertas().subscribe();
+          this.toast.success('Lote eliminado.', 'Eliminado');
         },
         error: (err) => {
-          console.error('Error al eliminar lote:', err);
-          const errorMsg = err.error?.message || 'No se pudo eliminar el lote.';
-          alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+          this.toast.error(err.error?.message || 'No se pudo eliminar el lote.', 'Error');
+          this.cdr.detectChanges();
         },
       });
-    }
-  }
-
-  private generatePages(): void {
-    const totalPages = this.meta.totalPages;
-    const currentPage = this.meta.page;
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    this.pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-      this.pages.push(i);
-    }
+    });
   }
 
   calcularEdadActual(lote: Lote): number {
@@ -252,13 +251,17 @@ export class Lotes implements OnInit {
   }
   toggleLote(lote: Lote): void {
     if (this.auth.isVisitante()) return;
-    this.loteService.toggleActivo(lote.id_lote).subscribe({
+    this.loteService.toggleActivo(lote.uuid!).subscribe({
       next: (actualizado) => {
         lote.fecha_fin = actualizado.fecha_fin;
         this.alertaService.evaluarYGenerarAlertas().subscribe();
+        this.toast.success('Estado del lote actualizado.');
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Error al cambiar estado del lote:', err),
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error al cambiar estado del lote.', 'Error');
+        this.cdr.detectChanges();
+      },
     });
   }
 
@@ -297,7 +300,7 @@ export class Lotes implements OnInit {
           r => r.nombre_raza.toLowerCase() === this.nuevaRazaNombre.toLowerCase()
         );
         if (existente) {
-          this.razaService.restoreRaza(existente.id_raza).subscribe({
+          this.razaService.restoreRaza(existente.uuid!).subscribe({
             next: () => {
               existente.activo = true;
               this.loteForm.raza_id = existente.id_raza;
