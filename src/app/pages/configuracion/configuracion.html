@@ -56,7 +56,7 @@
             <div class="form-field">
               <label for="maxMortality">Tasa de Mortalidad Máxima Permitida (%)</label>
               <div class="input-with-suffix">
-                <input type="number" id="maxMortality" [(ngModel)]="settings.maxMortalityRate" name="maxMortalityRate" min="0" max="100" required />
+                <input type="number" id="maxMortality" [(ngModel)]="settings.tasa_mortalidad_max" name="tasa_mortalidad_max" min="0" max="100" required />
                 <span class="suffix">%</span>
               </div>
               <small class="field-help">Si la tasa de mortalidad de un lote supera este valor, el sistema disparará una advertencia.</small>
@@ -65,25 +65,16 @@
             <div class="form-field">
               <label for="minPostura">Tasa de Postura Mínima Esperada (%)</label>
               <div class="input-with-suffix">
-                <input type="number" id="minPostura" [(ngModel)]="settings.minPosturaRate" name="minPosturaRate" min="0" max="100" required />
+                <input type="number" id="minPostura" [(ngModel)]="settings.postura_minima" name="postura_minima" min="0" max="100" required />
                 <span class="suffix">%</span>
               </div>
               <small class="field-help">Porcentaje mínimo diario esperado de huevos por gallina (huevos / total gallinas).</small>
             </div>
 
             <div class="form-field">
-              <label for="feedPerHen">Alimento Diario Recomendado por Gallina (gramos)</label>
-              <div class="input-with-suffix">
-                <input type="number" id="feedPerHen" [(ngModel)]="settings.feedPerHen" name="feedPerHen" min="0" required />
-                <span class="suffix">g</span>
-              </div>
-              <small class="field-help">Cantidad recomendada de alimento en gramos por ave al día.</small>
-            </div>
-
-            <div class="form-field">
               <label for="stockCriticalPercent">Stock Crítico respecto al Mínimo (%)</label>
               <div class="input-with-suffix">
-                <input type="number" id="stockCriticalPercent" [(ngModel)]="settings.stockCriticalPercent" name="stockCriticalPercent" min="1" max="200" required />
+                <input type="number" id="stockCriticalPercent" [(ngModel)]="settings.stock_critico_porcentaje" name="stock_critico_porcentaje" min="1" max="200" required />
                 <span class="suffix">%</span>
               </div>
               <small class="field-help">Genera alerta cuando un insumo está en o por debajo de este porcentaje de su stock mínimo.</small>
@@ -92,7 +83,7 @@
             <div class="form-field">
               <label for="maxOccupancyRate">Ocupación Máxima de Galpón (%)</label>
               <div class="input-with-suffix">
-                <input type="number" id="maxOccupancyRate" [(ngModel)]="settings.maxOccupancyRate" name="maxOccupancyRate" min="1" max="100" required />
+                <input type="number" id="maxOccupancyRate" [(ngModel)]="settings.ocupacion_maxima" name="ocupacion_maxima" min="1" max="100" required />
                 <span class="suffix">%</span>
               </div>
               <small class="field-help">Genera alerta cuando un galpón alcanza o supera este porcentaje de ocupación.</small>

@@ -20,16 +20,16 @@ import { Lote } from '../../interfaces/lote.interface';
 import { Muerte } from '../../interfaces/muerte.interface';
 import { ToastService } from '../../services/toast.service';
 import { DialogService } from '../../services/dialog.service';
+import { SettingsService, AlertThresholds } from '../../services/settings.service';
 
 type ConfigTab = 'alertas' | 'tipos-alimento' | 'unidades-medida' | 'razas';
 
-interface Settings {
-  maxMortalityRate: number;
-  minPosturaRate: number;
-  feedPerHen: number;
-  stockCriticalPercent: number;
-  maxOccupancyRate: number;
-}
+const DEFAULTS: AlertThresholds = {
+  tasa_mortalidad_max: 5,
+  postura_minima: 70,
+  stock_critico_porcentaje: 100,
+  ocupacion_maxima: 95,
+};
 
 @Component({
   selector: 'app-configuracion',
@@ -48,12 +48,10 @@ export class Configuracion implements OnInit {
   generatedAlertsCount: number | null = null;
   auth = inject(AuthService);
 
-  // Listas de catálogos
   tiposAlimento: TipoAlimento[] = [];
   unidadesMedida: UnidadMedida[] = [];
   razas: Raza[] = [];
 
-  // Modales y formularios
   mostrarModalTipo = false;
   tipoEditando: TipoAlimento | null = null;
   tipoForm = { nombre: '' };
@@ -66,16 +64,9 @@ export class Configuracion implements OnInit {
   razaEditando: Raza | null = null;
   razaForm = { nombre_raza: '', activo: true };
 
-  // Settings form for alert thresholds
-  settings: Settings = {
-    maxMortalityRate: 5,
-    minPosturaRate: 70,
-    feedPerHen: 120,
-    stockCriticalPercent: 100,
-    maxOccupancyRate: 95,
-  };
+  settings: AlertThresholds = { ...DEFAULTS };
 
-  private readonly settingsKey = 'laying_hens_alert_thresholds';
+  private settingsService = inject(SettingsService);
 
   constructor(
     private tipoAlimentoService: TipoAlimentoService,
@@ -109,14 +100,16 @@ export class Configuracion implements OnInit {
   }
 
   loadSettings(): void {
-    const saved = localStorage.getItem(this.settingsKey);
-    if (!saved) return;
-
-    try {
-      this.settings = { ...this.settings, ...JSON.parse(saved) };
-    } catch (err) {
-      console.error('Error al cargar umbrales de alertas:', err);
-    }
+    this.settingsService.getAll().subscribe({
+      next: (settings) => {
+        this.settings = settings;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.settings = { ...DEFAULTS };
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // --- CRUD TIPOS DE ALIMENTO ---
@@ -387,8 +380,27 @@ export class Configuracion implements OnInit {
   }
 
   saveSettings(): void {
-    localStorage.setItem(this.settingsKey, JSON.stringify(this.settings));
-    this.toast.success('Umbrales de alerta guardados correctamente.', 'Configuración');
+    if (this.guardando) return;
+    this.guardando = true;
+    const ops = [
+      this.settingsService.set('tasa_mortalidad_max', String(this.settings.tasa_mortalidad_max)),
+      this.settingsService.set('postura_minima', String(this.settings.postura_minima)),
+      this.settingsService.set('stock_critico_porcentaje', String(this.settings.stock_critico_porcentaje)),
+      this.settingsService.set('ocupacion_maxima', String(this.settings.ocupacion_maxima)),
+    ];
+
+    forkJoin(ops).subscribe({
+      next: () => {
+        this.toast.success('Umbrales de alerta guardados correctamente.', 'Configuración');
+        this.guardando = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.toast.error('No se pudieron guardar los umbrales.');
+        this.guardando = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   evaluarYGenerarAlertas(): void {
@@ -456,10 +468,10 @@ export class Configuracion implements OnInit {
       const loteId = lote.uuid;
       const nombreLote = `Lote #${loteId}`;
 
-      if (Number(lote.produccion_pct) < this.settings.minPosturaRate) {
+      if (Number(lote.produccion_pct) < this.settings.postura_minima) {
         propuestas.push({
           titulo: `Postura baja en ${nombreLote}`,
-          mensaje: `La postura actual es ${lote.produccion_pct}% y está por debajo del mínimo configurado de ${this.settings.minPosturaRate}%.`,
+          mensaje: `La postura actual es ${lote.produccion_pct}% y está por debajo del mínimo configurado de ${this.settings.postura_minima}%.`,
           tipo: 'produccion',
           prioridad: 'alta',
           lote_id: loteId,
@@ -472,10 +484,10 @@ export class Configuracion implements OnInit {
         .reduce((total, muerte) => total + Number(muerte.cantidad || 0), 0);
       const mortalidad = totalGallinas > 0 ? (muertesLote / totalGallinas) * 100 : 0;
 
-      if (totalGallinas > 0 && mortalidad > this.settings.maxMortalityRate) {
+      if (totalGallinas > 0 && mortalidad > this.settings.tasa_mortalidad_max) {
         propuestas.push({
           titulo: `Mortalidad alta en ${nombreLote}`,
-          mensaje: `La mortalidad acumulada es ${mortalidad.toFixed(2)}% (${muertesLote} bajas de ${totalGallinas} aves), por encima del máximo configurado de ${this.settings.maxMortalityRate}%.`,
+          mensaje: `La mortalidad acumulada es ${mortalidad.toFixed(2)}% (${muertesLote} bajas de ${totalGallinas} aves), por encima del máximo configurado de ${this.settings.tasa_mortalidad_max}%.`,
           tipo: 'salud',
           prioridad: 'alta',
           lote_id: loteId,
@@ -484,7 +496,7 @@ export class Configuracion implements OnInit {
     });
 
     alimentos.forEach((alimento) => {
-      const limiteStock = Number(alimento.stock_minimo || 0) * (this.settings.stockCriticalPercent / 100);
+      const limiteStock = Number(alimento.stock_minimo || 0) * (this.settings.stock_critico_porcentaje / 100);
       if (Number(alimento.stock_actual || 0) <= limiteStock) {
         propuestas.push({
           titulo: `Stock crítico de ${alimento.nombre}`,
@@ -500,10 +512,10 @@ export class Configuracion implements OnInit {
       const gallinas = Number(galpon.gallinasActuales || 0);
       const ocupacion = capacidad > 0 ? (gallinas / capacidad) * 100 : 0;
 
-      if (capacidad > 0 && ocupacion >= this.settings.maxOccupancyRate) {
+      if (capacidad > 0 && ocupacion >= this.settings.ocupacion_maxima) {
         propuestas.push({
           titulo: `Ocupación alta en ${galpon.nombre}`,
-          mensaje: `El galpón tiene ${gallinas} aves de ${capacidad} cupos (${ocupacion.toFixed(2)}%), superando el umbral de ${this.settings.maxOccupancyRate}%.`,
+          mensaje: `El galpón tiene ${gallinas} aves de ${capacidad} cupos (${ocupacion.toFixed(2)}%), superando el umbral de ${this.settings.ocupacion_maxima}%.`,
           tipo: 'infraestructura',
           prioridad: 'media',
           galpon_id: galpon.uuid ?? String(galpon.id_galpon),
@@ -523,5 +535,4 @@ export class Configuracion implements OnInit {
       (alerta.galpon_id ?? null) === (propuesta.galpon_id ?? null)
     );
   }
-
 }

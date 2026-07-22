@@ -33,7 +33,7 @@ export class Alertas implements OnInit {
   page = 1;
   limit = 5;
   sortBy = 'id_alerta';
-  sortOrder: 'ASC' | 'DESC' = 'ASC';
+  sortOrder: 'ASC' | 'DESC' = 'DESC';
 
   loading = false;
   guardando = false;

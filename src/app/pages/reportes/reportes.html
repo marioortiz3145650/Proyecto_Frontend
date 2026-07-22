@@ -16,25 +16,25 @@
     <div class="filters-grid">
       <div class="filter-field">
         <label for="fechaInicio">Fecha Inicio</label>
-        <input type="date" id="fechaInicio" [(ngModel)]="filtros.fecha_inicio" (change)="calcularReporte()" />
+        <input type="date" id="fechaInicio" [(ngModel)]="filtros.fecha_inicio" (change)="cargarDatos()" />
       </div>
 
       <div class="filter-field">
         <label for="fechaFin">Fecha Fin</label>
-        <input type="date" id="fechaFin" [(ngModel)]="filtros.fecha_fin" (change)="calcularReporte()" />
+        <input type="date" id="fechaFin" [(ngModel)]="filtros.fecha_fin" (change)="cargarDatos()" />
       </div>
 
       <div class="filter-field">
         <label for="loteSelector">Filtrar por Lote</label>
-        <select id="loteSelector" [(ngModel)]="filtros.lote_id" (change)="calcularReporte()">
+        <select id="loteSelector" [(ngModel)]="filtros.lote_id" (change)="cargarDatos()">
           <option value="">Todos los Lotes</option>
-          <option *ngFor="let lote of lotes" [value]="lote.id_lote">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
+          <option *ngFor="let lote of lotes" [value]="lote.uuid">Lote {{ lote.id_lote }} ({{ lote.raza?.nombre_raza }})</option>
         </select>
       </div>
 
       <div class="filter-field">
         <label for="tipoReporteSelector">Tipo de Reporte</label>
-        <select id="tipoReporteSelector" [(ngModel)]="filtros.tipo_reporte" (change)="calcularReporte()">
+        <select id="tipoReporteSelector" [(ngModel)]="filtros.tipo_reporte" (change)="cargarDatos()">
           <option value="todo">Completo (Todo)</option>
           <option value="produccion">Producción de Huevos</option>
           <option value="alimentacion">Consumo de Alimento</option>
@@ -114,60 +114,60 @@
             <div class="category-item">
               <div class="category-info">
                 <strong>Jumbo</strong>
-                <span>{{ reporte.jumbo }} huevos ({{ reporte.porcentajeJumbo }}%)</span>
+                <span>{{ categoriaTotales.jumbo }} huevos ({{ porcentajeJumbo }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-jumbo" [style.width.%]="reporte.porcentajeJumbo"></div>
+                <div class="progress-bar bar-jumbo" [style.width.%]="porcentajeJumbo"></div>
               </div>
             </div>
 
             <div class="category-item">
               <div class="category-info">
                 <strong>AAA</strong>
-                <span>{{ reporte.aaa }} huevos ({{ reporte.porcentajeAAA }}%)</span>
+                <span>{{ categoriaTotales.aaa }} huevos ({{ porcentajeAAA }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-aaa" [style.width.%]="reporte.porcentajeAAA"></div>
+                <div class="progress-bar bar-aaa" [style.width.%]="porcentajeAAA"></div>
               </div>
             </div>
 
             <div class="category-item">
               <div class="category-info">
                 <strong>AA</strong>
-                <span>{{ reporte.aa }} huevos ({{ reporte.porcentajeAA }}%)</span>
+                <span>{{ categoriaTotales.aa }} huevos ({{ porcentajeAA }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-aa" [style.width.%]="reporte.porcentajeAA"></div>
+                <div class="progress-bar bar-aa" [style.width.%]="porcentajeAA"></div>
               </div>
             </div>
 
             <div class="category-item">
               <div class="category-info">
                 <strong>A</strong>
-                <span>{{ reporte.a }} huevos ({{ reporte.porcentajeA }}%)</span>
+                <span>{{ categoriaTotales.a }} huevos ({{ porcentajeA }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-a" [style.width.%]="reporte.porcentajeA"></div>
+                <div class="progress-bar bar-a" [style.width.%]="porcentajeA"></div>
               </div>
             </div>
 
             <div class="category-item">
               <div class="category-info">
                 <strong>B</strong>
-                <span>{{ reporte.b }} huevos ({{ reporte.porcentajeB }}%)</span>
+                <span>{{ categoriaTotales.b }} huevos ({{ porcentajeB }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-b" [style.width.%]="reporte.porcentajeB"></div>
+                <div class="progress-bar bar-b" [style.width.%]="porcentajeB"></div>
               </div>
             </div>
 
             <div class="category-item">
               <div class="category-info">
                 <strong>C</strong>
-                <span>{{ reporte.c }} huevos ({{ reporte.porcentajeC }}%)</span>
+                <span>{{ categoriaTotales.c }} huevos ({{ porcentajeC }}%)</span>
               </div>
               <div class="progress-bar-container">
-                <div class="progress-bar bar-c" [style.width.%]="reporte.porcentajeC"></div>
+                <div class="progress-bar bar-c" [style.width.%]="porcentajeC"></div>
               </div>
             </div>
           </div>
@@ -186,7 +186,7 @@
               <div class="chart-bars">
                 <div class="chart-bar-column" *ngFor="let dia of reporte.produccionPorDia">
                   <div class="chart-bar-value">{{ dia.total | number }}</div>
-                  <div class="chart-bar" [style.height.%]="dia.pct"></div>
+                  <div class="chart-bar" [style.height.%]="getDiaPct(dia)"></div>
                   <div class="chart-bar-label">{{ dia.fecha }}</div>
                 </div>
               </div>
