@@ -231,10 +231,17 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
       if (!response.ok) throw new Error('Servidor no responde correctamente');
 
       const data = await response.json();
+      
+      const wasConnected = this.pythonConnected;
       this.pythonConnected = true;
       this.currentWeight = data.weight;
       this.currentCategory = data.category;
       this.isSimulation = data.is_simulation;
+
+      if (!wasConnected) {
+        // Detectar los nombres reales de las cámaras una vez se establece conexión
+        this.detectarCamaras();
+      }
 
       if (data.scan_count > this.lastScanCount) {
         this.lastScanCount = data.scan_count;

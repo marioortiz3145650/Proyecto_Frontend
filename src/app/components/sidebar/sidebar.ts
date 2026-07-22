@@ -17,8 +17,8 @@ interface MenuItem {
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
     <aside 
-      [class.-translate-x-full]="!isOpen"
-      class="bg-green-800 text-white w-64 min-h-screen p-4 fixed md:static inset-y-0 left-0 transform md:transform-none transition-transform duration-200 ease-in-out z-30 md:translate-x-0">
+      class="bg-green-800 text-white w-64 min-h-screen p-4 fixed md:static inset-y-0 left-0 transform md:transform-none transition-transform duration-200 ease-in-out z-30 md:translate-x-0"
+      [class.-translate-x-full]="!isOpen">
       
       <!-- Close button visible only on mobile -->
       <div class="flex justify-end md:hidden mb-4">
@@ -128,7 +128,6 @@ export class SidebarComponent implements OnInit {
     const segments = url.split('/');
     const firstSegment = segments[1];
     
-    // Encontrar el menú padre que coincide con el primer segmento
     for (const item of this.allMenuItems) {
       if (item.children) {
         const childRoutes = item.children.map(c => c.route?.split('/')[1]).filter(Boolean);
@@ -137,7 +136,7 @@ export class SidebarComponent implements OnInit {
         }
       }
       if (item.route?.split('/')[1] === firstSegment) {
-        return null; // No es hijo de un menú
+        return null;
       }
     }
     return null;

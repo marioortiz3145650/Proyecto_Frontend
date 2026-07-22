@@ -6,6 +6,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { providePrimeNG } from 'primeng/config';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
+import { MatDialog } from '@angular/material/dialog';
 
 import { routes } from './app.routes';
 import { tokenInterceptor } from './interceptors/token.interceptor';
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
         preset: 'tailwind'
       }
     }),
+    MatDialog,
     MessageService
   ]
 };
