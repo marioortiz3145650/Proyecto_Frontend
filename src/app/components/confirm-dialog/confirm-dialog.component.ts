@@ -8,6 +8,7 @@ export interface ConfirmDialogData {
   warning?: string;
   deleteLabel?: string;
   cancelLabel?: string;
+  actionType?: 'danger' | 'primary';
 }
 
 @Component({
@@ -21,7 +22,7 @@ export interface ConfirmDialogData {
         {{ data.warning || 'Esta acción puede afectar a otros procesos o registros vinculados.' }}
       </p>
       <div class="fen-confirm__actions">
-        <button type="button" class="fen-btn fen-btn--danger" (click)="confirm()">
+        <button type="button" class="fen-btn" [ngClass]="data.actionType === 'primary' ? 'fen-btn--primary' : 'fen-btn--danger'" (click)="confirm()">
           {{ data.deleteLabel || 'Eliminar' }}
         </button>
         <button type="button" class="fen-btn fen-btn--text" (click)="cancel()">
@@ -88,6 +89,15 @@ export interface ConfirmDialogData {
 
       .fen-btn--danger:hover {
         background-color: #b42318;
+      }
+
+      .fen-btn--primary {
+        background-color: #0f52ba;
+        color: #ffffff;
+      }
+
+      .fen-btn--primary:hover {
+        background-color: #0a3d8a;
       }
 
       .fen-btn--text {
