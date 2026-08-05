@@ -314,10 +314,10 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   }
 
   reiniciarSesion(): void {
-    this.dialog.confirmDelete(
+    this.dialog.confirmAction(
       'Se perderá el historial no guardado de la sesión actual.',
       '¿Reiniciar los contadores de la sesión actual?',
-      'registro de sesión'
+      'Reiniciar'
     ).subscribe((confirmado) => {
       if (!confirmado) return;
       if (this.pythonConnected) {
@@ -360,14 +360,19 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
 
         if (response.data && response.data.length > 0) {
           const registroExistente = response.data[0];
+          
+          const loteSeleccionado = this.lotes.find(l => l.uuid === this.selectedLoteId);
+          const loteDisplayId = loteSeleccionado ? loteSeleccionado.id_lote : this.selectedLoteId;
+
           const mensaje =
-            `Ya existe un registro de producción para el Lote ${this.selectedLoteId} el día ${this.selectedFecha}.\n` +
+            `Ya existe un registro de producción para el Lote ${loteDisplayId} el día ${this.selectedFecha}.\n` +
             `¿Desea SUMAR los huevos de esta sesión al registro existente?\n` +
             `Existentes: ${registroExistente.total} huevos. Nuevos: ${this.totalSessionEggs} huevos.`;
-          this.dialog.confirmDelete(
+            
+          this.dialog.confirmAction(
             mensaje,
             'Registro existente encontrado',
-            'registro de producción'
+            'Aceptar'
           ).subscribe((confirmado) => {
             if (!confirmado) {
               this.loading = false;
@@ -417,12 +422,6 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
     this.toast.success('Producción guardada correctamente en la Base de Datos.', 'Guardado');
     this.alertaService.evaluarYGenerarAlertas().subscribe();
 
-    this.dialog.confirmDelete(
-      'Se limpiará la sesión actual para iniciar una nueva recolección.',
-      '¿Limpiar la sesión actual?',
-      'registro de sesión'
-    ).subscribe((confirmado) => {
-      if (!confirmado) return;
       if (this.pythonConnected) {
         fetch(`${this.pythonBaseUrl}/clear`, { method: 'POST' }).catch(() => {});
       }
@@ -431,7 +430,6 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
       this.totalSessionEggs = 0;
       this.lastScanCount = 0;
       this.changeDetector.detectChanges();
-    });
   }
 
   private manejarErrorGuardado(err: any): void {

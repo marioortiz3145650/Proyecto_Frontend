@@ -116,8 +116,9 @@ export class AlertaService {
             const propuestas: Partial<Alerta>[] = [];
 
             lotes.forEach((lote) => {
-              const loteId = lote.uuid;
-              const nombreLote = `Lote #${loteId}`;
+              const loteUuid = lote.uuid;
+              const loteIdDisplay = lote.id_lote;
+              const nombreLote = `Lote #${loteIdDisplay}`;
 
               if (Number(lote.produccion_pct) < settings.postura_minima) {
                 propuestas.push({
@@ -125,13 +126,13 @@ export class AlertaService {
                   mensaje: `La postura actual es ${lote.produccion_pct}% y está por debajo del mínimo configurado de ${settings.postura_minima}%.`,
                   tipo: 'produccion',
                   prioridad: 'alta',
-                  lote_id: loteId,
+                  lote_id: loteUuid,
                 });
               }
 
               const totalGallinas = Number(lote.total_gallinas || 0);
               const muertesLote = muertes
-                .filter((muerte) => muerte.lote?.uuid === loteId)
+                .filter((muerte) => muerte.lote?.uuid === loteUuid)
                 .reduce((total, muerte) => total + Number(muerte.cantidad || 0), 0);
               const mortalidad = totalGallinas > 0 ? (muertesLote / totalGallinas) * 100 : 0;
 
@@ -141,7 +142,7 @@ export class AlertaService {
                   mensaje: `La mortalidad acumulada es ${mortalidad.toFixed(2)}% (${muertesLote} bajas de ${totalGallinas} aves), por encima del máximo configurado de ${settings.tasa_mortalidad_max}%.`,
                   tipo: 'salud',
                   prioridad: 'alta',
-                  lote_id: loteId,
+                  lote_id: loteUuid,
                 });
               }
             });

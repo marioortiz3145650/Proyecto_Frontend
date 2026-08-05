@@ -54,7 +54,7 @@
   <div class="dash-content" *ngIf="!loading">
 
     <!-- Producción reciente -->
-    <div class="dash-card">
+    <div class="dash-card full-width">
       <div class="card-header">
         <h3><i class="pi pi-chart-bar"></i> Producción Reciente</h3>
         <a routerLink="/produccion" class="ver-mas">Ver todo →</a>
@@ -64,24 +64,26 @@
           <i class="pi pi-inbox"></i>
           <span>Sin registros de producción</span>
         </div>
-        <table class="dash-table" *ngIf="produccionReciente.length > 0">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Lote</th>
-              <th>Total Huevos</th>
-              <th>Registrado por</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let p of produccionReciente">
-              <td>{{ p.fecha | date:'dd/MM/yyyy' }}</td>
-              <td>Lote {{ p.lote?.id_lote }}</td>
-              <td><span class="badge-green">{{ p.total }}</span></td>
-              <td>{{ p.creado_por?.nombre || p.creado_por?.nombre_usuario || 'N/A' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div *ngIf="produccionReciente.length > 0" class="chart-container chart-tall">
+          <p-chart type="line" [data]="produccionChartData" [options]="chartOptions"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lotes activos -->
+    <div class="dash-card">
+      <div class="card-header">
+        <h3><i class="pi pi-list"></i> Lotes Activos (Gallinas por Lote)</h3>
+        <a routerLink="/gallinas/lotes" class="ver-mas">Ver todos →</a>
+      </div>
+      <div class="card-body">
+        <div *ngIf="totalLotesActivos === 0" class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <span>No hay lotes activos</span>
+        </div>
+        <div *ngIf="totalLotesActivos > 0" class="chart-container doughnut-container">
+          <p-chart type="doughnut" [data]="lotesChartData" [options]="pieOptions"></p-chart>
+        </div>
       </div>
     </div>
 
@@ -96,92 +98,9 @@
           <i class="pi pi-check"></i>
           <span>Sin bajas registradas</span>
         </div>
-        <table class="dash-table" *ngIf="muertesRecientes.length > 0">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Lote</th>
-              <th>Cantidad</th>
-              <th>Causa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let m of muertesRecientes">
-              <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-              <td>Lote {{ m.lote?.id_lote }}</td>
-              <td><span class="badge-red">{{ m.cantidad }} aves</span></td>
-              <td>{{ m.causa }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Alimentos bajo stock -->
-    <div class="dash-card full-width">
-      <div class="card-header">
-        <h3><i class="pi pi-exclamation-triangle"></i> Alimentos con Stock Bajo</h3>
-        <a routerLink="/alimentos" class="ver-mas">Ver inventario →</a>
-      </div>
-      <div class="card-body">
-        <div *ngIf="alimentosBajoStock.length === 0" class="empty-state good">
-          <i class="pi pi-check-circle"></i>
-          <span>Todos los alimentos tienen stock suficiente</span>
+        <div *ngIf="muertesRecientes.length > 0" class="chart-container">
+          <p-chart type="line" [data]="muertesChartData" [options]="chartOptions"></p-chart>
         </div>
-        <table class="dash-table" *ngIf="alimentosBajoStock.length > 0">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Cantidad Actual</th>
-              <th>Stock Mínimo</th>
-              <th>Unidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let a of alimentosBajoStock">
-              <td><strong>{{ a.nombre }}</strong></td>
-              <td>{{ a.tipo_alimento?.nombre || 'N/A' }}</td>
-              <td><span class="badge-red">{{ a.stock_actual | number:'1.2-2' }}</span></td>
-              <td>{{ a.stock_minimo | number:'1.2-2' }}</td>
-              <td>{{ a.unidad_medida?.abreviatura }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Lotes activos -->
-    <div class="dash-card full-width">
-      <div class="card-header">
-        <h3><i class="pi pi-list"></i> Lotes Activos</h3>
-        <a routerLink="/gallinas/lotes" class="ver-mas">Ver todos →</a>
-      </div>
-      <div class="card-body">
-        <div *ngIf="totalLotesActivos === 0" class="empty-state">
-          <i class="pi pi-inbox"></i>
-          <span>No hay lotes activos</span>
-        </div>
-        <table class="dash-table" *ngIf="totalLotesActivos > 0">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Raza</th>
-              <th>Gallinas</th>
-              <th>Fecha Inicio</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let l of lotes | slice:0:5">
-              <ng-container *ngIf="!l.fecha_fin">
-                <td>{{ l.id_lote }}</td>
-                <td>{{ l.raza?.nombre_raza || 'N/A' }}</td>
-                <td><strong>{{ l.total_gallinas | number }}</strong> aves</td>
-                <td>{{ l.fecha_inicio | date:'dd/MM/yyyy' }}</td>
-              </ng-container>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
 

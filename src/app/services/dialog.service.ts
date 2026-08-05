@@ -28,4 +28,27 @@ export class DialogService {
     });
     return ref.afterClosed();
   }
+
+  confirmAction(
+    mensaje = '¿Está seguro de que desea realizar esta acción?',
+    titulo = 'Confirmar acción',
+    acceptLabel = 'Aceptar'
+  ): Observable<boolean> {
+    const data: ConfirmDialogData = {
+      entityName: '',
+      title: titulo,
+      warning: mensaje,
+      deleteLabel: acceptLabel,
+      cancelLabel: 'Cancelar',
+      actionType: 'primary',
+    };
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data,
+      panelClass: 'fen-confirm-dialog-panel',
+      backdropClass: 'fen-confirm-dialog-backdrop',
+      autoFocus: false,
+      restoreFocus: false,
+    });
+    return ref.afterClosed();
+  }
 }
