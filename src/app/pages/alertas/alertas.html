@@ -13,9 +13,24 @@
 
   <!-- Filtros -->
   <div class="filters-card">
-    <h3>Filtros</h3>
+    <h3>Filtros y Búsqueda</h3>
     <div class="filters-row">
       <div class="filters-grid">
+        <div class="filter-field search-field-full">
+          <label for="searchAlerta">Búsqueda General</label>
+          <div class="search-input-wrapper">
+            <i class="pi pi-search"></i>
+            <input
+              type="text"
+              id="searchAlerta"
+              [(ngModel)]="searchQuery"
+              placeholder="Buscar título, mensaje, tipo..."
+            />
+            <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
         <div class="filter-field">
           <label for="filtroTipo">Tipo de Alerta</label>
         <select id="filtroTipo" [(ngModel)]="filtros.tipo" (ngModelChange)="applyFilters()">
@@ -63,7 +78,7 @@
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">Cargando centro de alertas...</div>
+  <div *ngIf="loading" class="loading">Cargando alertas...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
   <!-- Tabla de resultados -->
@@ -100,7 +115,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let alert of alertas" [class.row-read]="alert.leida">
+        <tr *ngFor="let alert of alertasVisibles" [class.row-read]="alert.leida">
           <td>{{ alert.id_alerta }}</td>
           <td>
             <div class="title-cell">

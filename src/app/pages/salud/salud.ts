@@ -51,6 +51,29 @@ export class Salud implements OnInit {
   sortBy = 'fecha';
   sortOrder: 'ASC' | 'DESC' = 'DESC';
   filtros: FilterMuerteParams = {};
+  searchQuery = '';
+
+  get muertesVisibles(): Muerte[] {
+    if (!this.searchQuery.trim()) return this.muertes;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.muertes.filter(m =>
+      String(m.id_muerte).includes(q) ||
+      (m.causa && m.causa.toLowerCase().includes(q)) ||
+      (m.lote?.id_lote && String(m.lote.id_lote).includes(q)) ||
+      this.getUsuarioDisplayName(m.usuario).toLowerCase().includes(q)
+    );
+  }
+
+  get tratamientosVisibles(): Tratamiento[] {
+    if (!this.searchQuery.trim()) return this.tratamientos;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.tratamientos.filter(t =>
+      String(t.id_tratamiento).includes(q) ||
+      (t.tratamiento && t.tratamiento.toLowerCase().includes(q)) ||
+      (t.lote?.id_lote && String(t.lote.id_lote).includes(q)) ||
+      this.getUsuarioDisplayName(t.creado_por).toLowerCase().includes(q)
+    );
+  }
 
   // Estados generales
   loading = true; // Empieza en true para evitar ExpressionChangedAfterItHasBeenCheckedError

@@ -46,9 +46,21 @@ export class ProduccionManualComponent implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
   filtros: FilterProduccionParams = {};
+  searchQuery = '';
   loading = false;
   error: string | null = null;
   Math = Math;
+
+  get produccionesVisibles(): Produccion[] {
+    if (!this.searchQuery.trim()) return this.producciones;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.producciones.filter(p =>
+      String(p.id_produccion).includes(q) ||
+      (p.lote?.id_lote && String(p.lote.id_lote).includes(q)) ||
+      String(p.total).includes(q) ||
+      this.getUsuarioDisplayName(p.creado_por).toLowerCase().includes(q)
+    );
+  }
 
   mostrarModal = false;
   produccionEditando: Produccion | null = null;
@@ -160,6 +172,7 @@ export class ProduccionManualComponent implements OnInit {
 
   clearFilters(): void {
     this.filtros = {};
+    this.searchQuery = '';
     this.page = 1;
     this.loadProducciones();
   }

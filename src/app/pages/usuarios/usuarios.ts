@@ -14,8 +14,20 @@ import { ToastService } from '../../services/toast.service';
 })
 export class UsuariosComponent implements OnInit {
   usuarios: Usuario[] = [];
+  searchQuery = '';
   loading = false;
   error: string | null = null;
+
+  get usuariosFiltrados(): Usuario[] {
+    if (!this.searchQuery.trim()) return this.usuarios;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.usuarios.filter(u =>
+      (u.nombre && u.nombre.toLowerCase().includes(q)) ||
+      (u.correo && u.correo.toLowerCase().includes(q)) ||
+      (u.nombre_usuario && u.nombre_usuario.toLowerCase().includes(q)) ||
+      this.getRolNombre(u.rol).toLowerCase().includes(q)
+    );
+  }
 
   // Unified Edit and Password Modal State
   editModalUser: Usuario | null = null;

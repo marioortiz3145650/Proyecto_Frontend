@@ -97,17 +97,24 @@
            <i class="pi pi-info-circle"></i>
            {{ generatedAlertsCount === 0 ? 'No hay alertas nuevas por generar.' : ('Se generaron ' + generatedAlertsCount + ' alerta(s) nueva(s).') }}
          </div>
-       </form>
-       <!-- Tab: Tipos de Alimento CRUD -->
+        </form>
+
+      <!-- Tab: Tipos de Alimento CRUD -->
       <div *ngIf="activeTab === 'tipos-alimento'" class="settings-card">
         <div class="card-header-action">
           <div>
             <h3>Catálogo de Tipos de Alimento</h3>
             <p class="card-subtitle text-soft">Administra las clasificaciones para la comida de las aves.</p>
           </div>
-<button class="btn btn-primary btn-sm" (click)="abrirModalCrearTipo()" *ngIf="auth.canEdit()">
-             <i class="pi pi-plus"></i> Nuevo Tipo
-           </button>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="position: relative;">
+              <i class="pi pi-search" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280;"></i>
+              <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar tipo..." style="padding-left: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding-top: 0.25rem; padding-bottom: 0.25rem; background: #ffffff;" />
+            </div>
+            <button class="btn btn-primary btn-sm" (click)="abrirModalCrearTipo()" *ngIf="auth.canEdit()">
+              <i class="pi pi-plus"></i> Nuevo Tipo
+            </button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -120,7 +127,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let t of tiposAlimento">
+              <tr *ngFor="let t of tiposAlimentoVisibles">
                 <td>#{{ t.id_tipo_insumo }}</td>
                 <td><strong>{{ t.nombre }}</strong></td>
 <td>
@@ -135,7 +142,7 @@
           <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
         </td>
               </tr>
-              <tr *ngIf="tiposAlimento.length === 0">
+              <tr *ngIf="tiposAlimentoVisibles.length === 0">
                 <td colspan="3" class="text-center text-soft py-4">No hay tipos de alimento registrados.</td>
               </tr>
             </tbody>
@@ -150,9 +157,15 @@
             <h3>Catálogo de Unidades de Medida</h3>
             <p class="card-subtitle text-soft">Administra las unidades métricas para pesar alimento e insumos.</p>
           </div>
-<button class="btn btn-primary btn-sm" (click)="abrirModalCrearUnidad()" *ngIf="auth.canEdit()">
-             <i class="pi pi-plus"></i> Nueva Unidad
-           </button>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="position: relative;">
+              <i class="pi pi-search" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280;"></i>
+              <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar unidad..." style="padding-left: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding-top: 0.25rem; padding-bottom: 0.25rem; background: #ffffff;" />
+            </div>
+            <button class="btn btn-primary btn-sm" (click)="abrirModalCrearUnidad()" *ngIf="auth.canEdit()">
+              <i class="pi pi-plus"></i> Nueva Unidad
+            </button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -166,7 +179,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let u of unidadesMedida">
+              <tr *ngFor="let u of unidadesMedidaVisibles">
                 <td>#{{ u.id_unidad }}</td>
                 <td><strong>{{ u.nombre }}</strong></td>
                 <td><span class="abbr-badge">{{ u.abreviatura }}</span></td>
@@ -182,7 +195,7 @@
           <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
         </td>
               </tr>
-              <tr *ngIf="unidadesMedida.length === 0">
+              <tr *ngIf="unidadesMedidaVisibles.length === 0">
                 <td colspan="4" class="text-center text-soft py-4">No hay unidades de medida registradas.</td>
               </tr>
             </tbody>
@@ -197,9 +210,15 @@
             <h3>Catálogo de Razas de Gallinas</h3>
             <p class="card-subtitle text-soft">Administra las razas de gallinas ponedoras en tu granja.</p>
           </div>
-<button class="btn btn-primary btn-sm" (click)="abrirModalCrearRaza()" *ngIf="auth.canEdit()">
-             <i class="pi pi-plus"></i> Nueva Raza
-           </button>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="position: relative;">
+              <i class="pi pi-search" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280;"></i>
+              <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar raza..." style="padding-left: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; padding-top: 0.25rem; padding-bottom: 0.25rem; background: #ffffff;" />
+            </div>
+            <button class="btn btn-primary btn-sm" (click)="abrirModalCrearRaza()" *ngIf="auth.canEdit()">
+              <i class="pi pi-plus"></i> Nueva Raza
+            </button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -213,7 +232,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of razas">
+              <tr *ngFor="let r of razasVisibles">
                 <td>#{{ r.id_raza }}</td>
                 <td><strong>{{ r.nombre_raza }}</strong></td>
 <td>
@@ -241,7 +260,7 @@
                   <span *ngIf="!auth.canEdit()" class="text-soft">Solo lectura</span>
                 </td>
               </tr>
-              <tr *ngIf="razas.length === 0">
+              <tr *ngIf="razasVisibles.length === 0">
                 <td colspan="4" class="text-center text-soft py-4">No hay razas registradas.</td>
               </tr>
             </tbody>

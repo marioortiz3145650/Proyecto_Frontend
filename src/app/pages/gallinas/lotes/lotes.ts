@@ -39,9 +39,21 @@ export class Lotes implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterLoteParams = {};
+  searchQuery = '';
   loading = false;
   error: string | null = null;
   Math = Math;
+
+  get lotesVisibles(): Lote[] {
+    if (!this.searchQuery.trim()) return this.lotes;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.lotes.filter(l =>
+      String(l.id_lote).includes(q) ||
+      (l.raza?.nombre_raza && l.raza.nombre_raza.toLowerCase().includes(q)) ||
+      String(l.total_gallinas).includes(q) ||
+      (l.fecha_fin ? 'cerrado' : 'activo').includes(q)
+    );
+  }
 
   // Variables para CRUD Modal
   mostrarModal = false;
