@@ -15,6 +15,7 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class Razas implements OnInit {
   razas: Raza[] = [];
+  searchQuery = '';
   loading = false;
   error: string | null = null;
 
@@ -38,6 +39,16 @@ export class Razas implements OnInit {
 
   ngOnInit(): void {
     this.loadRazas();
+  }
+
+  get razasFiltradas(): Raza[] {
+    if (!this.searchQuery.trim()) return this.razas;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.razas.filter(r =>
+      r.nombre_raza.toLowerCase().includes(q) ||
+      String(r.id_raza).includes(q) ||
+      (r.activo ? 'activo' : 'inactivo').includes(q)
+    );
   }
 
   loadRazas(): void {

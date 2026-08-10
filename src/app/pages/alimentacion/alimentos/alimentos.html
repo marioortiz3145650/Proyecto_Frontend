@@ -8,9 +8,26 @@
 
   <!-- Filtros -->
   <div class="filters-card">
-    <h3>Filtros</h3>
+    <h3>Filtros y Búsqueda</h3>
     <div class="filters-row">
       <div class="filters-grid">
+      <div class="filter-field search-field-full">
+        <label for="searchAlimento">Búsqueda General</label>
+        <div class="search-input-wrapper">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            id="searchAlimento"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="page = 1"
+            placeholder="Buscar por nombre de alimento, tipo, unidad..."
+          />
+          <button *ngIf="searchQuery" (click)="searchQuery = ''; page = 1" class="btn-clear-search">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </div>
+
       <div class="filter-field">
         <label for="filtroId">ID Insumo</label>
         <input
@@ -39,7 +56,7 @@
       </div>
       <div class="filter-actions">
         <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
-        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+        <button class="btn btn-secondary" (click)="clearFilters(); searchQuery = ''">Limpiar</button>
       </div>
       </div>
 

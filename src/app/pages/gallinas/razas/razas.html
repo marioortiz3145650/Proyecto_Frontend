@@ -6,6 +6,23 @@
     </button>
   </div>
 
+  <!-- Barra de Búsqueda -->
+  <div class="filters-card" style="background: white; padding: 1rem 1.25rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1rem; align-items: center; width: 100%;">
+      <div class="search-input-wrapper">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Buscar por nombre o ID de raza..."
+        />
+        <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div *ngIf="loading" class="loading">Cargando razas...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
@@ -21,7 +38,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let raza of razas">
+        <tr *ngFor="let raza of razasFiltradas">
           <td>{{ raza.id_raza }}</td>
           <td>{{ raza.nombre_raza }}</td>
           <td>

@@ -54,6 +54,7 @@ export class Consumo implements OnInit {
   // Filtros locales
   filtroLoteId?: string;
   filtroInsumoId?: string;
+  searchQuery = '';
 
   // Paginación
   page = 1;
@@ -180,7 +181,18 @@ export class Consumo implements OnInit {
     return this.movimientos.filter(m => {
       const matchLote = !this.filtroLoteId || m.lote?.uuid === this.filtroLoteId;
       const matchInsumo = !this.filtroInsumoId || m.alimento?.uuid === this.filtroInsumoId;
-      return matchLote && matchInsumo;
+      let matchSearch = true;
+      if (this.searchQuery.trim()) {
+        const q = this.searchQuery.toLowerCase().trim();
+        matchSearch = (
+          String(m.id_movimiento).includes(q) ||
+          (m.alimento?.nombre && m.alimento.nombre.toLowerCase().includes(q)) ||
+          (m.lote?.id_lote && String(m.lote.id_lote).includes(q)) ||
+          (m.observaciones && m.observaciones.toLowerCase().includes(q)) ||
+          this.getUsuarioDisplayName(m.creado_por).toLowerCase().includes(q)
+        );
+      }
+      return matchLote && matchInsumo && matchSearch;
     });
   }
 
@@ -191,6 +203,7 @@ export class Consumo implements OnInit {
   clearFilters(): void {
     this.filtroLoteId = undefined;
     this.filtroInsumoId = undefined;
+    this.searchQuery = '';
     this.page = 1;
     this.cdr.detectChanges();
   }

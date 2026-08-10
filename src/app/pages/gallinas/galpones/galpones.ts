@@ -39,9 +39,20 @@ export class Galpones implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterGalponParams = {};
+  searchQuery = '';
   loading = false;
   error: string | null = null;
   Math = Math;
+
+  get galponesVisibles(): Galpon[] {
+    if (!this.searchQuery.trim()) return this.galpones;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.galpones.filter(g =>
+      (g.nombre && g.nombre.toLowerCase().includes(q)) ||
+      (g.direccion && g.direccion.toLowerCase().includes(q)) ||
+      (g.lote?.id_lote && String(g.lote.id_lote).includes(q))
+    );
+  }
 
   // Variables para CRUD Modal
   mostrarModal = false;

@@ -8,9 +8,25 @@
 
   <!-- Filtros -->
   <div class="filters-card">
-    <h3>Filtros</h3>
+    <h3>Filtros y Búsqueda</h3>
     <div class="filters-row">
       <div class="filters-grid">
+      <div class="filter-field search-field-full">
+        <label for="searchLote">Búsqueda General</label>
+        <div class="search-input-wrapper">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            id="searchLote"
+            [(ngModel)]="searchQuery"
+            placeholder="Buscar por ID, raza, aves, estado..."
+          />
+          <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </div>
+
       <div class="filter-field">
         <label for="filtroRaza">Raza</label>
         <select id="filtroRaza" [(ngModel)]="filtros.raza_id" (change)="applyFilters()">
@@ -32,7 +48,7 @@
 
       <div class="filter-actions">
         <button class="btn btn-primary" (click)="applyFilters()">Buscar</button>
-        <button class="btn btn-secondary" (click)="clearFilters()">Limpiar</button>
+        <button class="btn btn-secondary" (click)="clearFilters(); searchQuery = ''">Limpiar</button>
       </div>
       </div>
 
@@ -72,7 +88,7 @@
          </tr>
        </thead>
        <tbody>
-         <tr *ngFor="let lote of lotes">
+         <tr *ngFor="let lote of lotesVisibles">
            <td>{{ lote.id_lote }}</td>
            <td>{{ lote.raza?.nombre_raza || 'N/A' }}</td>
            <td><strong>{{ lote.total_gallinas || 0 | number }}</strong> aves</td>

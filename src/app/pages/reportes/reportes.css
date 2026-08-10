@@ -415,12 +415,12 @@
 }
 
 .btn-print {
-  background-color: #6c757d;
-  color: white;
+  background-color: #198754;
+  color: #fff;
 }
 
 .btn-print:hover {
-  background-color: #5a6268;
+  background-color: #157347;
 }
 
 /* Responsive design */

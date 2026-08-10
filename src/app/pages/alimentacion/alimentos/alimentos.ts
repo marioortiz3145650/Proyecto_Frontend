@@ -35,6 +35,7 @@ export class Alimentos implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'ASC';
 
   filtros: FilterAlimentoParams = {};
+  searchQuery = '';
   loading = false;
   guardando = false;
   error: string | null = null;
@@ -294,7 +295,16 @@ export class Alimentos implements OnInit {
   get alimentosVisibles(): Alimento[] {
     return this.alimentos.filter(a => {
       const stock = Number(a.stock_actual);
-      return !Number.isNaN(stock) && stock > 0;
+      const validStock = !Number.isNaN(stock) && stock > 0;
+      if (!validStock) return false;
+      if (!this.searchQuery.trim()) return true;
+      const q = this.searchQuery.toLowerCase().trim();
+      return (
+        a.nombre.toLowerCase().includes(q) ||
+        String(a.id_insumo).includes(q) ||
+        (a.tipo_alimento?.nombre && a.tipo_alimento.nombre.toLowerCase().includes(q)) ||
+        (a.unidad_medida?.nombre && a.unidad_medida.nombre.toLowerCase().includes(q))
+      );
     });
   }
 

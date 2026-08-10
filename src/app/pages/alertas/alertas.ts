@@ -46,6 +46,20 @@ export class Alertas implements OnInit {
     prioridad: undefined,
     leida: undefined,
   };
+  searchQuery = '';
+
+  get alertasVisibles(): Alerta[] {
+    if (!this.searchQuery.trim()) return this.alertas;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.alertas.filter(a =>
+      (a.titulo && a.titulo.toLowerCase().includes(q)) ||
+      (a.mensaje && a.mensaje.toLowerCase().includes(q)) ||
+      (a.tipo && a.tipo.toLowerCase().includes(q)) ||
+      (a.prioridad && a.prioridad.toLowerCase().includes(q)) ||
+      (a.lote?.id_lote && String(a.lote.id_lote).includes(q)) ||
+      (a.galpon?.nombre && a.galpon.nombre.toLowerCase().includes(q))
+    );
+  }
 
   // Creación de alerta
   mostrarModal = false;
@@ -159,6 +173,7 @@ export class Alertas implements OnInit {
       prioridad: undefined,
       leida: undefined,
     };
+    this.searchQuery = '';
     this.page = 1;
     this.loadAlertas();
   }

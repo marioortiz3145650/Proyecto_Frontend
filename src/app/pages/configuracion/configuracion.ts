@@ -51,6 +51,31 @@ export class Configuracion implements OnInit {
   tiposAlimento: TipoAlimento[] = [];
   unidadesMedida: UnidadMedida[] = [];
   razas: Raza[] = [];
+  searchQuery = '';
+
+  get tiposAlimentoVisibles(): TipoAlimento[] {
+    if (!this.searchQuery.trim()) return this.tiposAlimento;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.tiposAlimento.filter(t =>
+      t.nombre.toLowerCase().includes(q) || String(t.id_tipo_insumo).includes(q)
+    );
+  }
+
+  get unidadesMedidaVisibles(): UnidadMedida[] {
+    if (!this.searchQuery.trim()) return this.unidadesMedida;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.unidadesMedida.filter(u =>
+      u.nombre.toLowerCase().includes(q) || u.abreviatura.toLowerCase().includes(q) || String(u.id_unidad).includes(q)
+    );
+  }
+
+  get razasVisibles(): Raza[] {
+    if (!this.searchQuery.trim()) return this.razas;
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.razas.filter(r =>
+      r.nombre_raza.toLowerCase().includes(q) || String(r.id_raza).includes(q)
+    );
+  }
 
   mostrarModalTipo = false;
   tipoEditando: TipoAlimento | null = null;
@@ -96,6 +121,7 @@ export class Configuracion implements OnInit {
   setTab(tab: ConfigTab): void {
     this.activeTab = tab;
     this.error = null;
+    this.searchQuery = '';
     this.generatedAlertsCount = null;
   }
 

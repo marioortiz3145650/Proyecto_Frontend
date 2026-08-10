@@ -8,9 +8,26 @@
 
   <!-- Filtros -->
   <div class="filters-card">
-    <h3>Filtros</h3>
+    <h3>Filtros y Búsqueda</h3>
     <div class="filters-row">
       <div class="filters-grid">
+      <div class="filter-field search-field-full">
+        <label for="searchConsumo">Búsqueda General</label>
+        <div class="search-input-wrapper">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            id="searchConsumo"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="page = 1"
+            placeholder="Buscar por lote, alimento, usuario..."
+          />
+          <button *ngIf="searchQuery" (click)="searchQuery = ''; page = 1" class="btn-clear-search">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </div>
+
       <div class="filter-field">
         <label for="filtroLote">Lote</label>
         <select id="filtroLote" [(ngModel)]="filtroLoteId" (ngModelChange)="page = 1">

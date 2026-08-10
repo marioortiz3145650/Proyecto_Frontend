@@ -29,7 +29,20 @@
   <div *ngIf="activeTab === 'muertes' && !loading && !loadingMuertes">
     <div class="action-bar">
       <!-- Filtros -->
-      <div class="filters-inline">
+      <div class="filters-inline" style="flex-wrap: wrap; gap: 0.75rem; flex: 1; align-items: center;">
+        <div class="filter-item" style="flex: 1; max-width: 280px;">
+          <div class="search-input-wrapper">
+            <i class="pi pi-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="Buscar causa, lote, usuario..."
+            />
+            <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
         <div class="filter-item">
           <label>Lote:</label>
           <select [(ngModel)]="filtros.lote" (change)="applyFilters()">
@@ -41,7 +54,7 @@
           <label>Fecha:</label>
           <input type="date" [(ngModel)]="filtros.fecha" (change)="applyFilters()" />
         </div>
-        <button class="btn btn-secondary btn-sm" (click)="clearFilters()">
+        <button class="btn btn-secondary btn-sm" (click)="clearFilters(); searchQuery = ''">
           <i class="pi pi-filter-slash"></i> Limpiar
         </button>
       </div>
@@ -65,7 +78,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let m of muertes">
+          <tr *ngFor="let m of muertesVisibles">
             <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
             <td><strong>Lote {{ m.lote?.id_lote }}</strong> ({{ m.lote?.raza?.nombre_raza }})</td>
             <td class="text-red font-semibold">{{ m.cantidad }} aves</td>
@@ -82,7 +95,7 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="muertes.length === 0">
+          <tr *ngIf="muertesVisibles.length === 0">
             <td [attr.colspan]="auth.isVisitante() ? 5 : 6" class="text-center text-soft py-4">No se encontraron registros de mortalidad.</td>
           </tr>
         </tbody>
@@ -102,7 +115,21 @@
   <!-- SECCIÓN 2: TRATAMIENTOS MÉDICOS -->
   <div *ngIf="activeTab === 'tratamientos' && !loading && !loadingTratamientos">
     <div class="action-bar">
-      <div></div>
+      <div class="filters-inline" style="flex: 1; align-items: center;">
+        <div class="filter-item" style="flex: 1; max-width: 280px;">
+          <div class="search-input-wrapper">
+            <i class="pi pi-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="Buscar tratamiento, lote..."
+            />
+            <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
       <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrearTratamiento()">
         <i class="pi pi-plus"></i> Registrar Tratamiento
       </button>
@@ -120,7 +147,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let t of tratamientos">
+          <tr *ngFor="let t of tratamientosVisibles">
             <td>{{ t.fecha | date:'dd/MM/yyyy' }}</td>
             <td><strong>Lote {{ t.lote?.id_lote || 'N/A' }} ({{ t.lote?.raza?.nombre_raza || '' }})</strong></td>
             <td>{{ t.tratamiento }}</td>
@@ -135,7 +162,7 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="tratamientos.length === 0" class="empty">
+          <tr *ngIf="tratamientosVisibles.length === 0" class="empty">
             <td [attr.colspan]="auth.isVisitante() ? 3 : 4" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
           </tr>
         </tbody>
