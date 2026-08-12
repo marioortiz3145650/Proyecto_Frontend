@@ -53,6 +53,45 @@
         </div>
       </div>
       
+      <!-- Controles de Ajuste y Guardado de Posición de Recuadros -->
+      <div class="box-control-toolbar" *ngIf="pythonConnected">
+        <div class="target-toggle">
+          <span class="toolbar-label">Seleccionar Recuadro:</span>
+          <button type="button" 
+                  class="btn-toggle lcd" 
+                  [class.active]="activeTargetBox === 'lcd'"
+                  (click)="activeTargetBox = 'lcd'">
+            🟩 Pantalla LCD (Verde)
+          </button>
+          <button type="button" 
+                  class="btn-toggle egg" 
+                  [class.active]="activeTargetBox === 'egg'"
+                  (click)="activeTargetBox = 'egg'">
+            🟪 Zona del Huevo (Rosa)
+          </button>
+        </div>
+
+        <div class="dpad-container">
+          <button type="button" class="dpad-btn up" (click)="moverBox('up')" title="Mover arriba">
+            <i class="pi pi-chevron-up"></i>
+          </button>
+          <div class="dpad-middle">
+            <button type="button" class="dpad-btn left" (click)="moverBox('left')" title="Mover izquierda">
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            <button type="button" class="dpad-btn down" (click)="moverBox('down')" title="Mover abajo">
+              <i class="pi pi-chevron-down"></i>
+            </button>
+            <button type="button" class="dpad-btn right" (click)="moverBox('right')" title="Mover derecha">
+              <i class="pi pi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-save-pos" (click)="guardarPosicionConfig()">
+          <i class="pi pi-save"></i> Guardar Posición
+        </button>
+      </div>
     </div>
 
     <!-- Panel Derecho: Resumen de la Sesión -->
@@ -124,12 +163,12 @@
         <span class="legend-desc">Registrar peso en la sesión</span>
       </div>
       <div class="legend-item">
-        <span class="key-badge">W = ↑ / S = ↓</span>
-        <span class="legend-desc">Mover recuadro (ROI) arriba / abajo</span>
+        <span class="key-badge">E / TAB</span>
+        <span class="legend-desc">Alternar entre LCD (Verde) y Huevo (Rosa)</span>
       </div>
       <div class="legend-item">
-        <span class="key-badge">A = ← / D = →</span>
-        <span class="legend-desc">Mover recuadro (ROI) izquierda / derecha</span>
+        <span class="key-badge">W/S/A/D / Flechas</span>
+        <span class="legend-desc">Mover recuadro seleccionado</span>
       </div>
       <div class="legend-item">
         <span class="key-badge">Q</span>

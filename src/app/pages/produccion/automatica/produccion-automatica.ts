@@ -147,6 +147,8 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
     }
   }
 
+  activeTargetBox: 'lcd' | 'egg' = 'lcd';
+
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     const targetElement = event.target as HTMLElement;
@@ -163,27 +165,51 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
     } else if (key === 'q') {
       event.preventDefault();
       this.detenerCamara();
+    } else if (key === 'e' || event.code === 'Tab') {
+      event.preventDefault();
+      this.activeTargetBox = this.activeTargetBox === 'lcd' ? 'egg' : 'lcd';
     } else if (key === 'w' || event.key === 'ArrowUp') {
       event.preventDefault();
-      this.moverROI('up');
+      this.moverBox('up');
     } else if (key === 's' || event.key === 'ArrowDown') {
       event.preventDefault();
-      this.moverROI('down');
+      this.moverBox('down');
     } else if (key === 'a' || event.key === 'ArrowLeft') {
       event.preventDefault();
-      this.moverROI('left');
+      this.moverBox('left');
     } else if (key === 'd' || event.key === 'ArrowRight') {
       event.preventDefault();
-      this.moverROI('right');
+      this.moverBox('right');
     }
   }
 
-  moverROI(direction: string): void {
-    fetch('http://localhost:5000/move_roi', {
+  moverBox(direction: string): void {
+    const endpoint = this.activeTargetBox === 'lcd' ? '/move_roi' : '/move_egg_zone';
+    fetch(`${this.pythonBaseUrl}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ direction: direction })
-    }).catch(err => console.warn('Error al mover ROI:', err));
+      body: JSON.stringify({ direction })
+    }).catch(err => console.warn(`Error al mover ${this.activeTargetBox}:`, err));
+  }
+
+  moverROI(direction: string): void {
+    this.moverBox(direction);
+  }
+
+  guardarPosicionConfig(): void {
+    fetch(`${this.pythonBaseUrl}/save_config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          this.toast.success('Posición de los recuadros guardada permanentemente en vision_config.json.', 'Posición Guardada');
+        } else {
+          this.toast.error('Error al guardar la posición.', 'Error');
+        }
+      })
+      .catch(() => this.toast.error('Error al conectar con la cámara.', 'Error'));
   }
 
   loadLotes(): void {
