@@ -29,7 +29,6 @@ export class UsersService {
       if (params.correo !== undefined) httpParams = httpParams.set('correo', params.correo);
       if (params.nombre_usuario !== undefined) httpParams = httpParams.set('nombre_usuario', params.nombre_usuario);
       if (params.rol !== undefined) httpParams = httpParams.set('rol', params.rol.toString());
-      if (params.activo !== undefined) httpParams = httpParams.set('activo', params.activo.toString());
       if (params.fecha_registro_inicio !== undefined) httpParams = httpParams.set('fecha_registro_inicio', params.fecha_registro_inicio);
       if (params.fecha_registro_fin !== undefined) httpParams = httpParams.set('fecha_registro_fin', params.fecha_registro_fin);
     }

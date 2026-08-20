@@ -39,7 +39,7 @@ interface NavSearchResult {
               [(ngModel)]="searchQuery"
               (input)="onSearchInput()"
               (focus)="showSearchResults = true"
-              placeholder="Buscar vista o módulo en el sistema (ej: lotes, salud, alertas)..."
+              placeholder="Buscar vista o módulo en el sistema"
               class="w-full bg-[#204d2c] text-white placeholder-green-200 text-sm rounded-full pl-10 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 border border-green-700 transition-all shadow-inner"
             />
             <button

@@ -102,18 +102,23 @@
            <td>{{ lote.fecha_fin ? (lote.fecha_fin | date:'dd/MM/yyyy') : '—' }}</td>
            <td *ngIf="!auth.isVisitante()">
              <div class="action-buttons">
-               <div class="toggle-switch">
+               <div class="toggle-switch" (click)="toggleLote(lote, $event)" [title]="lote.fecha_fin ? 'Un lote cerrado no se puede reactivar' : 'Desactivar / Cerrar Lote'">
                  <input
                    type="checkbox"
                    [id]="'toggle-lote-' + lote.id_lote"
                    [checked]="!lote.fecha_fin"
-                   (change)="toggleLote(lote)"
+                   [disabled]="!!lote.fecha_fin"
                  />
                  <label [for]="'toggle-lote-' + lote.id_lote" class="toggle-slider"></label>
                </div>
-               <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(lote)">
-                 <i class="pi pi-pencil"></i> Editar
-               </button>
+                <button
+                  class="btn btn-edit btn-sm"
+                  [disabled]="!!lote.fecha_fin"
+                  [title]="lote.fecha_fin ? 'No se puede editar un lote cerrado' : 'Editar Lote'"
+                  (click)="abrirModalEditar(lote)"
+                >
+                  <i class="pi pi-pencil"></i> Editar
+                </button>
                <button class="btn btn-delete btn-sm" (click)="eliminarLote(lote.uuid!)">
                  <i class="pi pi-trash"></i> Borrar
                </button>
@@ -201,7 +206,11 @@
               id="formFechaFin"
               name="fecha_fin"
               [(ngModel)]="loteForm.fecha_fin"
+              [disabled]="!!loteEditando.fecha_fin"
             />
+            <small *ngIf="loteEditando.fecha_fin" style="color: #d9534f; font-size: 12px; margin-top: 4px;">
+              Este lote ya está cerrado y no se puede volver a activar.
+            </small>
           </div>
         </div>
         <div class="modal-footer">
@@ -211,6 +220,46 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación de Cierre de Lote -->
+  <div class="modal-overlay" *ngIf="mostrarModalCerrar">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Confirmar Cierre de Lote</h3>
+        <button class="close-btn" (click)="cerrarModalCerrar()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-warning-box">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span><strong>¡Atención!</strong> Al cerrar este lote, su estado pasará a <strong>Cerrado</strong> y <strong>no se podrá volver a activar</strong>.</span>
+        </div>
+        <p class="modal-text">
+          Para confirmar el cierre del <strong>Lote #{{ loteACerrar?.id_lote }}</strong>, escriba exactamente <strong>CONFIRMAR</strong> a continuación:
+        </p>
+        <div class="form-field">
+          <input
+            type="text"
+            id="inputConfirmarCierre"
+            [(ngModel)]="confirmacionTexto"
+            placeholder="Escriba CONFIRMAR"
+            autocomplete="off"
+            (keyup.enter)="confirmacionTexto.trim() === 'CONFIRMAR' && confirmarCierreLote()"
+          />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalCerrar()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-delete"
+          [disabled]="confirmacionTexto.trim() !== 'CONFIRMAR'"
+          (click)="confirmarCierreLote()"
+        >
+          <i class="pi pi-lock"></i> Cerrar Lote
+        </button>
+      </div>
     </div>
   </div>
 

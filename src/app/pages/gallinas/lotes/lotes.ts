@@ -70,6 +70,11 @@ export class Lotes implements OnInit {
     total_gallinas: 0,
   };
 
+  // Variables para Modal de Confirmación de Cierre
+  mostrarModalCerrar = false;
+  loteACerrar: Lote | null = null;
+  confirmacionTexto = '';
+
   constructor(
     private loteService: LoteService,
     private razaService: RazaService,
@@ -173,6 +178,10 @@ export class Lotes implements OnInit {
 
   abrirModalEditar(lote: Lote): void {
     if (this.auth.isVisitante()) return;
+    if (lote.fecha_fin) {
+      this.toast.warning('No se puede editar un lote que ya ha sido cerrado.', 'Acción no permitida');
+      return;
+    }
     this.loteEditando = lote;
     this.loteForm = {
       raza_id: lote.raza?.id_raza,
@@ -192,6 +201,10 @@ export class Lotes implements OnInit {
 
   guardarLote(): void {
     if (this.auth.isVisitante()) return;
+    if (this.loteEditando?.fecha_fin && !this.loteForm.fecha_fin) {
+      this.toast.error('Un lote finalizado no se puede volver a activar.', 'Error');
+      return;
+    }
     const payload: any = {
       edad_semanas: Number(this.loteForm.edad_semanas),
       fecha_inicio: this.loteForm.fecha_inicio,
@@ -261,17 +274,47 @@ export class Lotes implements OnInit {
     const diffWeeks = Math.floor(diffDays / 7);
     return lote.edad_semanas + diffWeeks;
   }
-  toggleLote(lote: Lote): void {
+
+  toggleLote(lote: Lote, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     if (this.auth.isVisitante()) return;
-    this.loteService.toggleActivo(lote.uuid!).subscribe({
+    if (lote.fecha_fin) {
+      this.toast.warning('Un lote cerrado no se puede volver a activar.', 'Acción no permitida');
+      return;
+    }
+    this.loteACerrar = lote;
+    this.confirmacionTexto = '';
+    this.mostrarModalCerrar = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalCerrar(): void {
+    this.mostrarModalCerrar = false;
+    this.loteACerrar = null;
+    this.confirmacionTexto = '';
+    this.cdr.detectChanges();
+  }
+
+  confirmarCierreLote(): void {
+    if (this.auth.isVisitante()) return;
+    if (!this.loteACerrar || this.confirmacionTexto.trim() !== 'CONFIRMAR') return;
+
+    this.loteService.toggleActivo(this.loteACerrar.uuid!).subscribe({
       next: (actualizado) => {
-        lote.fecha_fin = actualizado.fecha_fin;
+        if (this.loteACerrar) {
+          this.loteACerrar.fecha_fin = actualizado.fecha_fin;
+        }
+        this.cerrarModalCerrar();
+        this.loadLotes();
         this.alertaService.evaluarYGenerarAlertas().subscribe();
-        this.toast.success('Estado del lote actualizado.');
+        this.toast.success('El lote ha sido cerrado correctamente.');
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.toast.error(err.error?.message || 'Error al cambiar estado del lote.', 'Error');
+        this.toast.error(err.error?.message || 'Error al cerrar el lote.', 'Error');
         this.cdr.detectChanges();
       },
     });
