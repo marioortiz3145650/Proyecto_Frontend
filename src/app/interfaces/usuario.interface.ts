@@ -4,7 +4,6 @@ export interface Usuario {
   correo?: string;
   nombre_usuario?: string;
   rol?: { id: string; uuid?: string; nombre: string } | string;
-  activo: boolean;
   fecha_registro?: string;
   uuid?: string;
 }
@@ -14,7 +13,6 @@ export interface FilterUsuarioParams {
   correo?: string;
   nombre_usuario?: string;
   rol?: number;
-  activo?: boolean;
   fecha_registro_inicio?: string;
   fecha_registro_fin?: string;
 }
