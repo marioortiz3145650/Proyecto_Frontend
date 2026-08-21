@@ -115,21 +115,37 @@
   <!-- SECCIÓN 2: TRATAMIENTOS MÉDICOS -->
   <div *ngIf="activeTab === 'tratamientos' && !loading && !loadingTratamientos">
     <div class="action-bar">
-      <div class="filters-inline" style="flex: 1; align-items: center;">
+      <!-- Filtros inline Tratamientos -->
+      <div class="filters-inline" style="flex-wrap: wrap; gap: 0.75rem; flex: 1; align-items: center;">
         <div class="filter-item" style="flex: 1; max-width: 280px;">
           <div class="search-input-wrapper">
             <i class="pi pi-search"></i>
             <input
               type="text"
-              [(ngModel)]="searchQuery"
+              [(ngModel)]="searchQueryTratamientos"
               placeholder="Buscar tratamiento, lote..."
             />
-            <button *ngIf="searchQuery" (click)="searchQuery = ''" class="btn-clear-search">
+            <button *ngIf="searchQueryTratamientos" (click)="searchQueryTratamientos = ''" class="btn-clear-search">
               <i class="pi pi-times"></i>
             </button>
           </div>
         </div>
+        <div class="filter-item">
+          <label>Lote:</label>
+          <select [(ngModel)]="filtrosTratamientos.lote" (change)="applyFiltersTratamientos()">
+            <option [ngValue]="undefined">Todos</option>
+            <option *ngFor="let l of lotes" [value]="l.id_lote">Lote {{ l.id_lote }}</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Fecha:</label>
+          <input type="date" [(ngModel)]="filtrosTratamientos.fecha" (change)="applyFiltersTratamientos()" />
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="clearFiltersTratamientos()">
+          <i class="pi pi-filter-slash"></i> Limpiar
+        </button>
       </div>
+
       <button *ngIf="!auth.isVisitante()" class="btn btn-primary" (click)="abrirModalCrearTratamiento()">
         <i class="pi pi-plus"></i> Registrar Tratamiento
       </button>
@@ -140,9 +156,10 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Fecha</th>
+            <th (click)="sortByFieldTratamientos('fecha')">Fecha <i class="pi pi-sort"></i></th>
             <th>Lote</th>
-            <th>Tratamiento / Medicamento</th>
+            <th (click)="sortByFieldTratamientos('tratamiento')">Tratamiento / Medicamento <i class="pi pi-sort"></i></th>
+            <th>Registrado por</th>
             <th *ngIf="!auth.isVisitante()">Acciones</th>
           </tr>
         </thead>
@@ -151,6 +168,7 @@
             <td>{{ t.fecha | date:'dd/MM/yyyy' }}</td>
             <td><strong>Lote {{ t.lote?.id_lote || 'N/A' }} ({{ t.lote?.raza?.nombre_raza || '' }})</strong></td>
             <td>{{ t.tratamiento }}</td>
+            <td>{{ getUsuarioDisplayName(t.creado_por) }}</td>
             <td *ngIf="!auth.isVisitante()">
               <div class="action-buttons">
                 <button class="btn-icon btn-edit" (click)="abrirModalEditarTratamiento(t)" title="Editar">
@@ -163,10 +181,19 @@
             </td>
           </tr>
           <tr *ngIf="tratamientosVisibles.length === 0" class="empty">
-            <td [attr.colspan]="auth.isVisitante() ? 3 : 4" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
+            <td [attr.colspan]="auth.isVisitante() ? 4 : 5" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Paginación Tratamientos -->
+    <div class="pagination-container" *ngIf="metaTratamientos.totalPages > 1">
+      <app-pagination
+        [totalPages]="metaTratamientos.totalPages"
+        [currentPage]="metaTratamientos.page"
+        (pageChange)="changePageTratamientos($event)"
+      ></app-pagination>
     </div>
   </div>
 

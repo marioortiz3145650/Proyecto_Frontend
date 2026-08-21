@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 import { MuerteService } from '../../services/muerte';
 import { LoteService } from '../../services/lote';
 import { UsersService } from '../../services/users';
-import { TratamientoService, Tratamiento } from '../../services/tratamiento';
+import { TratamientoService, Tratamiento, FilterTratamientoParams } from '../../services/tratamiento';
 import { Muerte, FilterMuerteParams } from '../../interfaces/muerte.interface';
 import { Lote } from '../../interfaces/lote.interface';
 import { Usuario } from '../../interfaces/usuario.interface';
@@ -53,6 +53,22 @@ export class Salud implements OnInit {
   filtros: FilterMuerteParams = {};
   searchQuery = '';
 
+  // Paginación Tratamientos
+  metaTratamientos: PaginationMeta = {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  };
+  pageTratamientos = 1;
+  limitTratamientos = 5;
+  sortByTratamientos = 'fecha';
+  sortOrderTratamientos: 'ASC' | 'DESC' = 'DESC';
+  filtrosTratamientos: FilterTratamientoParams = {};
+  searchQueryTratamientos = '';
+
   get muertesVisibles(): Muerte[] {
     if (!this.searchQuery.trim()) return this.muertes;
     const q = this.searchQuery.toLowerCase().trim();
@@ -65,8 +81,8 @@ export class Salud implements OnInit {
   }
 
   get tratamientosVisibles(): Tratamiento[] {
-    if (!this.searchQuery.trim()) return this.tratamientos;
-    const q = this.searchQuery.toLowerCase().trim();
+    if (!this.searchQueryTratamientos.trim()) return this.tratamientos;
+    const q = this.searchQueryTratamientos.toLowerCase().trim();
     return this.tratamientos.filter(t =>
       String(t.id_tratamiento).includes(q) ||
       (t.tratamiento && t.tratamiento.toLowerCase().includes(q)) ||
@@ -126,11 +142,18 @@ export class Salud implements OnInit {
       order: this.sortOrder,
     };
 
+    const tratamientosParams: PaginationParams & Partial<FilterTratamientoParams> = {
+      page: this.pageTratamientos,
+      limit: this.limitTratamientos,
+      sortBy: this.sortByTratamientos,
+      order: this.sortOrderTratamientos,
+    };
+
     forkJoin({
       lotes: this.loteService.getLotes({ limit: 100 }),
       usuarios: this.usersService.getActiveUsers(),
       muertes: this.muerteService.getMuertes(muertesParams),
-      tratamientos: this.tratamientoService.getTratamientos()
+      tratamientos: this.tratamientoService.getTratamientos(tratamientosParams)
     }).subscribe({
       next: (res) => {
         this.lotes = res.lotes.data || [];
@@ -141,7 +164,8 @@ export class Salud implements OnInit {
         });
         this.muertes = res.muertes.data || [];
         this.meta = res.muertes.meta;
-        this.tratamientos = res.tratamientos || [];
+        this.tratamientos = res.tratamientos.data || [];
+        this.metaTratamientos = res.tratamientos.meta;
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -381,18 +405,59 @@ export class Salud implements OnInit {
     this.loadingTratamientos = true;
     this.error = null;
 
-    this.tratamientoService.getTratamientos().subscribe({
+    const params: PaginationParams & Partial<FilterTratamientoParams> = {
+      page: this.pageTratamientos,
+      limit: this.limitTratamientos,
+      sortBy: this.sortByTratamientos,
+      order: this.sortOrderTratamientos,
+    };
+
+    if (this.filtrosTratamientos.lote !== undefined && this.filtrosTratamientos.lote !== null) {
+      params.lote = this.filtrosTratamientos.lote;
+    }
+    if (this.filtrosTratamientos.fecha) params.fecha = this.filtrosTratamientos.fecha;
+
+    this.tratamientoService.getTratamientos(params).subscribe({
       next: (response) => {
-        this.tratamientos = response || [];
+        this.tratamientos = response.data || [];
+        this.metaTratamientos = response.meta;
         this.loadingTratamientos = false;
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       },
       error: () => {
         this.error = 'Error al cargar tratamientos médicos';
         this.loadingTratamientos = false;
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       }
     });
+  }
+
+  applyFiltersTratamientos(): void {
+    this.pageTratamientos = 1;
+    this.loadTratamientos();
+  }
+
+  clearFiltersTratamientos(): void {
+    this.filtrosTratamientos = {};
+    this.searchQueryTratamientos = '';
+    this.pageTratamientos = 1;
+    this.loadTratamientos();
+  }
+
+  sortByFieldTratamientos(field: string): void {
+    if (this.sortByTratamientos === field) {
+      this.sortOrderTratamientos = this.sortOrderTratamientos === 'ASC' ? 'DESC' : 'ASC';
+    } else {
+      this.sortByTratamientos = field;
+      this.sortOrderTratamientos = 'ASC';
+    }
+    this.loadTratamientos();
+  }
+
+  changePageTratamientos(page: number): void {
+    if (page < 1 || page > this.metaTratamientos.totalPages) return;
+    this.pageTratamientos = page;
+    this.loadTratamientos();
   }
 
   abrirModalCrearTratamiento(): void {
