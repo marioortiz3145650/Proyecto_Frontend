@@ -53,6 +53,8 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   lastScanCount = 0;
 
   private pollingIntervalId: any;
+  private failedPollsCount = 0;
+  private isDestroyed = false;
   loading = false;
   error: string | null = null;
   isTransitioningCamera = false;
@@ -62,6 +64,8 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   constructor(private changeDetector: ChangeDetectorRef) {}
 
   ngOnInit(): void {
+    this.isDestroyed = false;
+    this.failedPollsCount = 0;
     this.selectedFecha = new Date().toISOString().substring(0, 10);
     this.loadLotes();
     this.loadUsuarios();
@@ -84,6 +88,7 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
     if (this.pollingIntervalId) {
       clearInterval(this.pollingIntervalId);
     }
@@ -106,6 +111,7 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
 
   cambiarCamara(): void {
     this.pythonConnected = false;
+    this.failedPollsCount = 0;
     this.isTransitioningCamera = true;
     this.iniciarCamara();
     setTimeout(() => {
@@ -251,13 +257,18 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   }
 
   async pollPythonStatus(): Promise<void> {
-    if (this.isTransitioningCamera) return;
+    if (this.isTransitioningCamera || this.isDestroyed) return;
     try {
-      const response = await fetch(`${this.pythonBaseUrl}/status`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const response = await fetch(`${this.pythonBaseUrl}/status`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!response.ok) throw new Error('Servidor no responde correctamente');
 
       const data = await response.json();
       
+      this.failedPollsCount = 0;
       const wasConnected = this.pythonConnected;
       this.pythonConnected = true;
       this.currentWeight = data.weight;
@@ -277,7 +288,10 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
       }
       this.changeDetector.detectChanges();
     } catch (e) {
-      if (this.pythonConnected) {
+      if (this.isDestroyed || this.isTransitioningCamera) return;
+
+      this.failedPollsCount++;
+      if (this.failedPollsCount >= 10 && this.pythonConnected) {
         this.pythonConnected = false;
         this.toast.error('Se perdió la conexión con el detector.', 'Cámara desconectada');
         this.changeDetector.detectChanges();
