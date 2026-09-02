@@ -1,6 +1,6 @@
 <div class="produccion-container" [class.flash-effect]="flashActive">
   <div class="header-section">
-    <h2>Producción de Huevos - Detección Automática (Cámara / OCR)</h2>
+    <h2>Producción de Huevos - Clasificación Automática</h2>
     <div class="status-indicator" [class.connected]="pythonConnected">
       <i class="pi" [class.pi-check-circle]="pythonConnected" [class.pi-exclamation-triangle]="!pythonConnected"></i>
       <span>{{ pythonConnected ? 'Cámara Conectada' : 'Desconectado' }}</span>
@@ -45,8 +45,25 @@
       <div class="panel-header">
         <h3><i class="pi pi-video"></i> Flujo de la Cámara</h3>
       </div>
-      <div class="video-wrapper">
-        <img *ngIf="pythonConnected" [src]="videoFeedUrl" alt="Video de la Cámara" class="video-feed" />
+      <div class="video-wrapper" #videoWrapper style="position: relative; user-select: none;">
+        <img *ngIf="pythonConnected" [src]="videoFeedUrl" alt="Video de la Cámara" class="video-feed" 
+             #videoImg
+             [style.cursor]="isCalibrationMode ? 'crosshair' : 'default'"
+             draggable="false"
+             (mousedown)="onMouseDown($event)"
+             (mousemove)="onMouseMove($event)"
+             (mouseup)="onMouseUp()"
+             (mouseleave)="onMouseUp()" />
+             
+        <!-- Cuadro dibujado por el usuario en modo calibración -->
+        <div *ngIf="isDrawing && isCalibrationMode" 
+             style="position: absolute; border: 2px dashed yellow; background-color: rgba(255, 255, 0, 0.2); pointer-events: none; z-index: 10;"
+             [style.left.px]="drawRect.left"
+             [style.top.px]="drawRect.top"
+             [style.width.px]="drawRect.width"
+             [style.height.px]="drawRect.height">
+        </div>
+
         <div *ngIf="!pythonConnected" class="video-offline">
           <i class="pi pi-sync pi-spin offline-icon"></i>
           <h4>Iniciando Detector de Peso...</h4>
@@ -55,23 +72,29 @@
       
       <!-- Controles de Ajuste y Guardado de Posición de Recuadros -->
       <div class="box-control-toolbar" *ngIf="pythonConnected">
-        <div class="target-toggle">
+        <div class="target-toggle" style="flex-wrap: wrap;">
           <span class="toolbar-label">Seleccionar Recuadro:</span>
           <button type="button" 
                   class="btn-toggle lcd" 
-                  [class.active]="activeTargetBox === 'lcd'"
-                  (click)="activeTargetBox = 'lcd'">
-            🟩 Pantalla LCD (Verde)
+                  [class.active]="activeTargetBox === 'lcd' && !isCalibrationMode"
+                  (click)="seleccionarModo('lcd')">
+            🟩 Báscula (Verde)
           </button>
           <button type="button" 
                   class="btn-toggle egg" 
-                  [class.active]="activeTargetBox === 'egg'"
-                  (click)="activeTargetBox = 'egg'">
-            🟪 Zona del Huevo (Rosa)
+                  [class.active]="activeTargetBox === 'egg' && !isCalibrationMode"
+                  (click)="seleccionarModo('egg')">
+            🟪 Huevo (Rosa)
+          </button>
+          <button type="button" 
+                  class="btn-toggle calib" 
+                  [class.active]="isCalibrationMode"
+                  (click)="seleccionarModo('calib')">
+            🟨 Calibración 5x5 (Dibujar)
           </button>
         </div>
 
-        <div class="dpad-container">
+        <div class="dpad-container" [style.opacity]="isCalibrationMode ? '0.5' : '1'" [style.pointer-events]="isCalibrationMode ? 'none' : 'auto'">
           <button type="button" class="dpad-btn up" (click)="moverBox('up')" title="Mover arriba">
             <i class="pi pi-chevron-up"></i>
           </button>
@@ -88,9 +111,19 @@
           </div>
         </div>
 
-        <button type="button" class="btn btn-primary btn-save-pos" (click)="guardarPosicionConfig()">
-          <i class="pi pi-save"></i> Guardar Posición
-        </button>
+        <!-- Nuevos controles de tamaño agregados para el usuario -->
+        <div class="size-controls" style="display: flex; gap: 5px; margin-top: 10px; justify-content: center;" [style.opacity]="isCalibrationMode ? '0.5' : '1'" [style.pointer-events]="isCalibrationMode ? 'none' : 'auto'">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moverBox('wider')" title="Aumentar Ancho">➕↔</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moverBox('narrower')" title="Reducir Ancho">➖↔</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moverBox('taller')" title="Aumentar Alto">➕↕</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="moverBox('shorter')" title="Reducir Alto">➖↕</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+          <button type="button" class="btn btn-primary btn-save-pos" (click)="guardarPosicionConfig()">
+            <i class="pi pi-save"></i> Guardar Posición
+          </button>
+        </div>
       </div>
     </div>
 

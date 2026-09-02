@@ -222,7 +222,7 @@ export class ProduccionManualComponent implements OnInit {
   }
 
   abrirModalEditar(prod: Produccion): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.produccionEditando = prod;
     const rawDate = prod.fecha ? new Date(prod.fecha).toISOString().substring(0, 10) : '';
 
@@ -334,7 +334,7 @@ export class ProduccionManualComponent implements OnInit {
   }
 
   eliminarProduccion(uuid: string): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.dialog.confirmDelete(
       'Esta acción puede afectar a otros procesos o registros vinculados.',
       '¿Eliminar este registro de producción?',

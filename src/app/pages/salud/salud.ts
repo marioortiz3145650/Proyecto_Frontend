@@ -291,7 +291,7 @@ export class Salud implements OnInit {
   }
 
   abrirModalEditarMuerte(muerte: Muerte): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.muerteEditando = muerte;
     const creatorId = muerte.usuario?.uuid || (this.auth.getUser()?.id ? String(this.auth.getUser()?.id) : undefined);
     this.muerteForm = {
@@ -373,7 +373,7 @@ export class Salud implements OnInit {
   }
 
   eliminarMuerte(uuid: string): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     const muerte = this.muertes.find(m => m.uuid === uuid);
     const cantidad = muerte?.cantidad || 0;
     const warning =
@@ -476,7 +476,7 @@ export class Salud implements OnInit {
   }
 
   abrirModalEditarTratamiento(t: Tratamiento): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.tratamientoEditando = t;
     this.tratamientoForm = {
       fecha: t.fecha ? new Date(t.fecha).toISOString().substring(0, 10) : '',
@@ -551,7 +551,7 @@ export class Salud implements OnInit {
   }
 
   eliminarTratamiento(uuid: string): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.dialog.confirmDelete(
       'Esta acción puede afectar a otros procesos o registros vinculados.',
       '¿Eliminar este tratamiento médico?',

@@ -112,7 +112,7 @@ export class AuthService {
   }
 
   canEdit(): boolean {
-    return !this.isVisitante();
+    return this.isAdmin();
   }
 
   canAccessUsers(): boolean {

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, HostListener } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProduccionService } from '../../../services/produccion';
@@ -153,7 +153,18 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
     }
   }
 
-  activeTargetBox: 'lcd' | 'egg' = 'lcd';
+  activeTargetBox: 'lcd' | 'egg' | 'calib' = 'lcd';
+
+  seleccionarModo(modo: 'lcd' | 'egg' | 'calib') {
+    if (modo === 'calib') {
+      this.isCalibrationMode = true;
+      this.activeTargetBox = 'calib';
+      this.toast.info('Arrastre el cursor sobre la imagen para enmarcar el cuadro de 5x5cm.', 'Modo Calibración Activo');
+    } else {
+      this.activeTargetBox = modo;
+      this.isCalibrationMode = false;
+    }
+  }
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
@@ -173,7 +184,13 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
       this.detenerCamara();
     } else if (key === 'e' || event.code === 'Tab') {
       event.preventDefault();
-      this.activeTargetBox = this.activeTargetBox === 'lcd' ? 'egg' : 'lcd';
+      if (this.isCalibrationMode) {
+        this.seleccionarModo('lcd');
+      } else if (this.activeTargetBox === 'lcd') {
+        this.seleccionarModo('egg');
+      } else {
+        this.seleccionarModo('calib');
+      }
     } else if (key === 'w' || event.key === 'ArrowUp') {
       event.preventDefault();
       this.moverBox('up');
@@ -190,7 +207,10 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
   }
 
   moverBox(direction: string): void {
-    const endpoint = this.activeTargetBox === 'lcd' ? '/move_roi' : '/move_egg_zone';
+    let endpoint = '/move_roi';
+    if (this.activeTargetBox === 'egg') endpoint = '/move_egg_zone';
+    else if (this.activeTargetBox === 'calib') endpoint = '/move_calib_zone';
+    
     fetch(`${this.pythonBaseUrl}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -200,6 +220,67 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
 
   moverROI(direction: string): void {
     this.moverBox(direction);
+  }
+
+  @ViewChild('videoImg') videoImg!: ElementRef<HTMLImageElement>;
+  isCalibrationMode = false;
+  isDrawing = false;
+  startX = 0;
+  startY = 0;
+  drawRect = { left: 0, top: 0, width: 0, height: 0 };
+
+  toggleCalibrationMode() {
+    this.isCalibrationMode = !this.isCalibrationMode;
+    if (this.isCalibrationMode) {
+      this.toast.info('Arrastre el cursor sobre la imagen para enmarcar el cuadro de 5x5cm.', 'Modo Calibración');
+    }
+  }
+
+  onMouseDown(e: MouseEvent) {
+    if (!this.isCalibrationMode) return;
+    this.isDrawing = true;
+    this.startX = e.offsetX;
+    this.startY = e.offsetY;
+    this.drawRect = { left: this.startX, top: this.startY, width: 0, height: 0 };
+  }
+
+  onMouseMove(e: MouseEvent) {
+    if (!this.isDrawing) return;
+    const currentX = e.offsetX;
+    const currentY = e.offsetY;
+    
+    this.drawRect.left = Math.min(this.startX, currentX);
+    this.drawRect.top = Math.min(this.startY, currentY);
+    this.drawRect.width = Math.abs(currentX - this.startX);
+    this.drawRect.height = Math.abs(currentY - this.startY);
+  }
+
+  onMouseUp() {
+    if (!this.isDrawing) return;
+    this.isDrawing = false;
+    
+    if (this.drawRect.width > 20 && this.drawRect.height > 20) {
+      // Calcular factor de escala real (backend image es 640x480)
+      const imgEl = this.videoImg.nativeElement;
+      const scaleX = 640 / imgEl.clientWidth; 
+      
+      const backendWidth = this.drawRect.width * scaleX;
+      const pxPerCm = backendWidth / 5.0;
+      
+      fetch(`${this.pythonBaseUrl}/set_calibration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ px_per_mm: pxPerCm / 10.0 })
+      })
+      .then(res => res.json())
+      .then(data => {
+        this.toast.success(`Calibración guardada exitosamente: ${pxPerCm.toFixed(2)} px/cm`, 'Éxito');
+        this.isCalibrationMode = false;
+      })
+      .catch(() => this.toast.error('Error de conexión', 'Error'));
+    } else {
+      this.toast.warning('Cuadro muy pequeño, intente de nuevo.', 'Error');
+    }
   }
 
   guardarPosicionConfig(): void {
@@ -285,6 +366,12 @@ export class ProduccionAutomaticaComponent implements OnInit, OnDestroy {
         this.scannedEggs = data.scanned_eggs;
         this.recalcularContadoresDesdeSesion();
         this.triggerFlashEffect();
+
+        const latestEgg = this.scannedEggs[this.scannedEggs.length - 1];
+        if (latestEgg) {
+          const cat = latestEgg.category || 'N/A';
+          this.toast.success(`Registro exitoso: Huevo ${cat}`, '¡Huevo Registrado!');
+        }
       }
       this.changeDetector.detectChanges();
     } catch (e) {

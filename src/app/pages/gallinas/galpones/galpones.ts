@@ -165,7 +165,7 @@ export class Galpones implements OnInit {
   }
 
   abrirModalEditar(galpon: Galpon): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.galponEditando = galpon;
     this.galponForm = {
       nombre: galpon.nombre,
@@ -219,7 +219,7 @@ export class Galpones implements OnInit {
   }
 
   eliminarGalpon(uuid: string | undefined): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (uuid === undefined) return;
     this.dialog.confirmDelete(
       'Esta acción puede afectar a otros procesos o registros vinculados.',

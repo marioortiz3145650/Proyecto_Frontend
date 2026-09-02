@@ -148,7 +148,7 @@ export class Alimentos implements OnInit {
   changeLimit(newLimit?: number): void { if (newLimit !== undefined) this.limit = newLimit; this.page = 1; this.loadAlimentos(); }
 
   abrirModalCrear(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.alimentoEditando = null;
     this.guardando = false;
     this.alimentoForm = {
@@ -163,7 +163,7 @@ export class Alimentos implements OnInit {
   }
 
   abrirModalEditar(alimento: Alimento): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.alimentoEditando = alimento;
     this.guardando = false;
     this.alimentoForm = {
@@ -180,7 +180,7 @@ export class Alimentos implements OnInit {
   cerrarModal(): void { this.mostrarModal = false; this.guardando = false; this.cdr.detectChanges(); }
 
   abrirModalTipo(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.nuevoTipoForm = { nombre: '' };
     this.mostrarModalTipo = true;
     this.cdr.detectChanges();
@@ -188,7 +188,7 @@ export class Alimentos implements OnInit {
   cerrarModalTipo(): void { this.mostrarModalTipo = false; this.cdr.detectChanges(); }
 
   guardarTipoAlimento(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (!this.nuevoTipoForm.nombre.trim()) return;
     this.tipoAlimentoService.createTipoAlimento({ nombre: this.nuevoTipoForm.nombre }).subscribe({
       next: (tipo) => {
@@ -201,7 +201,7 @@ export class Alimentos implements OnInit {
   }
 
   abrirModalUnidad(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.nuevoUnidadForm = { nombre: '', abreviatura: '' };
     this.mostrarModalUnidad = true;
     this.cdr.detectChanges();
@@ -209,7 +209,7 @@ export class Alimentos implements OnInit {
   cerrarModalUnidad(): void { this.mostrarModalUnidad = false; this.cdr.detectChanges(); }
 
   guardarUnidadMedida(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (!this.nuevoUnidadForm.nombre.trim() || !this.nuevoUnidadForm.abreviatura.trim()) return;
     this.unidadMedidaService.createUnidadMedida({
       nombre: this.nuevoUnidadForm.nombre,
@@ -225,7 +225,7 @@ export class Alimentos implements OnInit {
   }
 
   guardarAlimento(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (this.guardando) return;
     if (!this.alimentoForm.tipo_alimento_id || !this.alimentoForm.unidad_medida_id) return;
 
@@ -271,7 +271,7 @@ export class Alimentos implements OnInit {
   }
 
   eliminarAlimento(uuid: string): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.dialog.confirmDelete(
       'Esta acción puede afectar a otros procesos o registros vinculados.',
       '¿Eliminar este alimento/insumo?',
