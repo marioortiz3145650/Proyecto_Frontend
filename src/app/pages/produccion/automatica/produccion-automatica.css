@@ -775,10 +775,10 @@ h2 {
 }
 
 .btn-toggle.egg.active {
-  background-color: #d63384;
+  background-color: #2563eb;
   color: white;
-  border-color: #d63384;
-  box-shadow: 0 2px 4px rgba(214, 51, 132, 0.3);
+  border-color: #2563eb;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
 .dpad-container {

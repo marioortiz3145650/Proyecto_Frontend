@@ -392,13 +392,15 @@
   margin-top: 20px;
 }
 
-.btn-secondary {
-  background-color: #198754;
+.btn-secondary,
+.btn-cancel {
+  background-color: #dc3545;
   color: #fff;
 }
 
-.btn-secondary:hover {
-  background-color: #157347;
+.btn-secondary:hover,
+.btn-cancel:hover {
+  background-color: #bb2d3b;
 }
 
 .btn-sm {

@@ -89,7 +89,7 @@
           </th>
           <th>Lote</th>
           <th>Fecha Creación</th>
-           <th *ngIf="!auth.isVisitante()">Acciones</th>
+           <th *ngIf="auth.isAdmin()">Acciones</th>
          </tr>
        </thead>
        <tbody>
@@ -98,7 +98,7 @@
            <td>{{ galpon.direccion }}</td>
            <td>{{ galpon.lote?.id_lote || 'N/A' }}</td>
            <td>{{ galpon.fecha_creacion | date : 'dd/MM/yyyy' }}</td>
-           <td *ngIf="!auth.isVisitante()">
+           <td *ngIf="auth.isAdmin()">
              <div class="action-buttons">
                <button class="btn btn-edit btn-sm" (click)="abrirModalEditar(galpon)">
                  <i class="pi pi-pencil"></i> Editar

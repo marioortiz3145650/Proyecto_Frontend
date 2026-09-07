@@ -177,7 +177,7 @@ export class Lotes implements OnInit {
   }
 
   abrirModalEditar(lote: Lote): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (lote.fecha_fin) {
       this.toast.warning('No se puede editar un lote que ya ha sido cerrado.', 'Acción no permitida');
       return;
@@ -244,7 +244,7 @@ export class Lotes implements OnInit {
   }
 
   eliminarLote(uuid: string): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.dialog.confirmDelete(
       'Esta acción puede afectar a otros procesos o registros vinculados.',
       '¿Eliminar este lote?',
@@ -280,7 +280,7 @@ export class Lotes implements OnInit {
       event.preventDefault();
       event.stopPropagation();
     }
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (lote.fecha_fin) {
       this.toast.warning('Un lote cerrado no se puede volver a activar.', 'Acción no permitida');
       return;
@@ -299,7 +299,7 @@ export class Lotes implements OnInit {
   }
 
   confirmarCierreLote(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     if (!this.loteACerrar || this.confirmacionTexto.trim() !== 'CONFIRMAR') return;
 
     this.loteService.toggleActivo(this.loteACerrar.uuid!).subscribe({
@@ -326,7 +326,7 @@ export class Lotes implements OnInit {
   errorRaza: string | null = null;
 
   abrirModalRaza(): void {
-    if (this.auth.isVisitante()) return;
+    if (!this.auth.isAdmin()) return;
     this.nuevaRazaNombre = '';
     this.errorRaza = null;
     this.mostrarModalRaza = true;

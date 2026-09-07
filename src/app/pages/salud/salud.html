@@ -74,7 +74,7 @@
             <th (click)="sortByField('cantidad')">Cantidad <i class="pi pi-sort"></i></th>
             <th>Causa de Muerte</th>
             <th>Registrado por</th>
-            <th *ngIf="!auth.isVisitante()">Acciones</th>
+            <th *ngIf="auth.isAdmin()">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -84,7 +84,7 @@
             <td class="text-red font-semibold">{{ m.cantidad }} aves</td>
             <td>{{ m.causa }}</td>
             <td>{{ getUsuarioDisplayName(m.usuario) }}</td>
-            <td *ngIf="!auth.isVisitante()">
+            <td *ngIf="auth.isAdmin()">
               <div class="action-buttons">
                 <button class="btn-icon btn-edit" (click)="abrirModalEditarMuerte(m)" title="Editar">
                   <i class="pi pi-pencil"></i>
@@ -96,7 +96,7 @@
             </td>
           </tr>
           <tr *ngIf="muertesVisibles.length === 0">
-            <td [attr.colspan]="auth.isVisitante() ? 5 : 6" class="text-center text-soft py-4">No se encontraron registros de mortalidad.</td>
+            <td [attr.colspan]="!auth.isAdmin() ? 5 : 6" class="text-center text-soft py-4">No se encontraron registros de mortalidad.</td>
           </tr>
         </tbody>
       </table>
@@ -160,7 +160,7 @@
             <th>Lote</th>
             <th (click)="sortByFieldTratamientos('tratamiento')">Tratamiento / Medicamento <i class="pi pi-sort"></i></th>
             <th>Registrado por</th>
-            <th *ngIf="!auth.isVisitante()">Acciones</th>
+            <th *ngIf="auth.isAdmin()">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -169,7 +169,7 @@
             <td><strong>Lote {{ t.lote?.id_lote || 'N/A' }} ({{ t.lote?.raza?.nombre_raza || '' }})</strong></td>
             <td>{{ t.tratamiento }}</td>
             <td>{{ getUsuarioDisplayName(t.creado_por) }}</td>
-            <td *ngIf="!auth.isVisitante()">
+            <td *ngIf="auth.isAdmin()">
               <div class="action-buttons">
                 <button class="btn-icon btn-edit" (click)="abrirModalEditarTratamiento(t)" title="Editar">
                   <i class="pi pi-pencil"></i>
@@ -181,7 +181,7 @@
             </td>
           </tr>
           <tr *ngIf="tratamientosVisibles.length === 0" class="empty">
-            <td [attr.colspan]="auth.isVisitante() ? 4 : 5" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
+            <td [attr.colspan]="!auth.isAdmin() ? 4 : 5" class="text-center text-soft py-4">No se encontraron registros de tratamientos médicos.</td>
           </tr>
         </tbody>
       </table>
